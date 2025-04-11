@@ -27,6 +27,8 @@ Get response from POST request to bungie API
 '''
 def post_request_response(path, payload):
     data = requests.post(ROOT + path, json=payload, headers=HEADER)
+    if "Response" not in data.json():
+        return None
     return data.json()["Response"]
 
 '''
@@ -45,7 +47,6 @@ def read_data_file(filepath):
         with open(filepath, "r") as file:
             data = json.load(file)
     except FileNotFoundError as e:
-        print(e)
         return None
     else:
         return data
