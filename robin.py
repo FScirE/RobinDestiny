@@ -4,9 +4,6 @@ from destiny import (
     read_data_file
 )
 import discord
-import platform
-import asyncio
-import signal
 
 API_KEY = get_key("./.env", "DISCORD_API_KEY")
 
