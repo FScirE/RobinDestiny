@@ -1,0 +1,26 @@
+{
+    "displayProperties": {
+        "description": "{var:1027206613}% bonus to Machine Gun damage.",
+        "name": "Overcharged Machine Gun",
+        "icon": "/common/destiny2_content/icons/3ca526bce517862693135d5c2acc08fc.png",
+        "iconSequences": [
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/3ca526bce517862693135d5c2acc08fc.png"
+                ]
+            },
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/d065fc6fb094c7d210c0790423549e99.png"
+                ]
+            }
+        ],
+        "hasIcon": true
+    },
+    "displayInNavMode": true,
+    "displayInActivitySelection": true,
+    "hash": 795009574,
+    "index": 149,
+    "redacted": false,
+    "blacklisted": false
+}

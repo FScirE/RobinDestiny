@@ -1,0 +1,26 @@
+{
+    "displayProperties": {
+        "description": "{var:2189146210}% bonus to outgoing Arc damage.",
+        "name": "Arc Surge",
+        "icon": "/common/destiny2_content/icons/226a64add0dbb3919e3f34ae778fd9b8.png",
+        "iconSequences": [
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/226a64add0dbb3919e3f34ae778fd9b8.png"
+                ]
+            },
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/684ee906783b0453b55c32a02c0a347e.png"
+                ]
+            }
+        ],
+        "hasIcon": true
+    },
+    "displayInNavMode": true,
+    "displayInActivitySelection": true,
+    "hash": 2691200658,
+    "index": 11,
+    "redacted": false,
+    "blacklisted": false
+}

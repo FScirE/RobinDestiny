@@ -1,0 +1,22 @@
+{
+    "displayProperties": {
+        "description": "Enemies throw grenades significantly more often.",
+        "name": "Scorched Earth",
+        "icon": "/common/destiny2_content/icons/49c30f6036bdbddf41580ccefeac0971.png",
+        "iconSequences": [
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/49c30f6036bdbddf41580ccefeac0971.png",
+                    "/common/destiny2_content/icons/38544528a6169e9d54fe3774fa17c204.png"
+                ]
+            }
+        ],
+        "hasIcon": true
+    },
+    "displayInNavMode": true,
+    "displayInActivitySelection": true,
+    "hash": 703904464,
+    "index": 105,
+    "redacted": false,
+    "blacklisted": false
+}

@@ -1,0 +1,26 @@
+{
+    "displayProperties": {
+        "description": "You will face [Shield-Piercing] Barrier and [Stagger] Unstoppable Champions.",
+        "name": "Champion Foes",
+        "icon": "/common/destiny2_content/icons/214f06ead880d46aca85cca14a07130a.png",
+        "iconSequences": [
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/214f06ead880d46aca85cca14a07130a.png"
+                ]
+            },
+            {
+                "frames": [
+                    "/common/destiny2_content/icons/4a9ce899feda4f5755dc922a43e7005a.png"
+                ]
+            }
+        ],
+        "hasIcon": true
+    },
+    "displayInNavMode": true,
+    "displayInActivitySelection": false,
+    "hash": 1806568190,
+    "index": 49,
+    "redacted": false,
+    "blacklisted": false
+}
