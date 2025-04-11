@@ -7,7 +7,8 @@ from dotenv import get_key
 DESTINY_API_KEY = get_key("./.env", "DESTINY_API_KEY")
 ROOT = "https://www.bungie.net/Platform"
 HEADER = {
-    "X-API-KEY": DESTINY_API_KEY
+    "X-API-KEY": DESTINY_API_KEY,
+    "Content-Type": "application/json"
 }
 
 hashes = {
@@ -15,10 +16,17 @@ hashes = {
 }
 
 ''''
-Get response from request to bungie API
+Get response from GET request to bungie API
 '''
 def get_request_response(path):
     data = requests.get(ROOT + path, headers=HEADER)
+    return data.json()["Response"]
+
+''''
+Get response from POST request to bungie API
+'''
+def post_request_response(path, payload):
+    data = requests.post(ROOT + path, json=payload, headers=HEADER)
     return data.json()["Response"]
 
 '''
