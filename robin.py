@@ -1,9 +1,12 @@
 from dotenv import get_key
 from destiny import (
-    setup_destiny_data, 
+    setup_destiny_data,
     read_data_file
 )
 import discord
+import platform
+import asyncio
+import signal
 
 API_KEY = get_key("./.env", "DISCORD_API_KEY")
 
@@ -18,28 +21,30 @@ tree = discord.app_commands.CommandTree(client)
 @client.event
 async def on_ready():
     await tree.sync()
-    print("Robin D. Estiny: Ready!")
+    print("Robin D. Estiny: Running!")
 
 @tree.command(
-    name="gm", 
+    name="gm",
     description="Get information about the current active grandmaster nightfall"
 )
 async def gm(context):
     data = read_data_file("data/grandmaster.json")
-    await context.response.send_message(data)
+    gm_name = data["displayProperties"]["description"]
+    await context.response.send_message(gm_name)
 
 @tree.command(
-    name="robin", 
+    name="robin",
     description=f"See all the things you can do with Robin D. Estiny"
 )
 async def robin(context):
-    await context.response.send_message(discord.Embed(
+    await context.response.send_message(embed=discord.Embed(
             title="Commands",
-            description="All the commands that Robin D. Estiny provides"
         )
-        .add_field(name="/gm", value="Get information about the current active grandmaster nightfall")
-        .add_field(name="/example", value="Example")
+        .set_thumbnail(url=client.user.avatar.url)
+        .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
+        #.add_field(name="/example", value="Example", inline=False)
     )
 
-#run bot
-client.run(API_KEY)
+if __name__ == "__main__":
+    print("Starting...")
+    client.run(API_KEY)
