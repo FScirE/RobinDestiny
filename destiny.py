@@ -129,7 +129,8 @@ def setup_destiny_data():
     print("Done!")
 
 """
-Gets account and character information and builds discord embed elements
+Following 3 functions gets account and character
+information and builds discord embed elements
 """
 def get_account_data(name, tag):
     info = {
@@ -138,14 +139,15 @@ def get_account_data(name, tag):
     }
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
-def get_character_data_account_embed(name, tag):
+
+def get_account_data_embed(name, tag):
     #get account data
     account_data = get_account_data(name, tag)
     if not account_data:
-        return None
+        return None, None, None
 
     #select primary profile (either cross saved primary or first in list)
-    if "crossSaveOverride" in account_data[0]:
+    if account_data[0]["crossSaveOverride"]:
         membership_type = account_data[0]["crossSaveOverride"]
         for data in account_data:
             if data["membershipType"] == membership_type:
@@ -156,19 +158,18 @@ def get_character_data_account_embed(name, tag):
         membership_id = account_data[0]["membershipId"]
         membership_url = IMG_ROOT + account_data[0]["iconPath"]
 
+    embed = Embed(title=f"{name}#{str(tag).zfill(4)}")
+    embed.set_author(name=f"Platform: {platforms[membership_type]}", icon_url=membership_url)
+    return embed, membership_type, membership_id
+
+def get_character_data_embed(initial, type, id):
     #get characters data
-    character_data = get_request_response(f"/Destiny2/{membership_type}/" +
-                                          f"Profile/{membership_id}" +
+    character_data = get_request_response(f"/Destiny2/{type}/" +
+                                          f"Profile/{id}" +
                                           f"?components={component_types['Characters']}")
 
     #start building embeds
-    embeds = []
-    embeds.append(
-        Embed(
-            title=f"{name}#{str(tag).zfill(4)}"
-        )
-        .set_author(name=f"Platform: {platforms[membership_type]}", icon_url=membership_url)
-    )
+    embeds = [initial]
     for _, character in character_data["characters"]["data"].items():
         minutes = int(character["minutesPlayedTotal"])
         guardian_class = classes[character["classHash"]]

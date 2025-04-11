@@ -2,7 +2,8 @@ from dotenv import get_key
 from destiny import (
     setup_destiny_data,
     read_data_file,
-    get_character_data_account_embed
+    get_account_data_embed,
+    get_character_data_embed
 )
 import discord
 
@@ -41,11 +42,14 @@ async def gm(context: discord.Interaction):
     tag="The four digits after the '#'"
 )
 async def lookup(context: discord.Interaction, name: str, tag: int):
-    embeds = get_character_data_account_embed(name, str(tag))
-    if embeds is None:
+    embed_initial, _type, _id = get_account_data_embed(name, str(tag))
+    if embed_initial is None:
         await context.response.send_message("User was not found!", ephemeral=True)
     else:
-        await context.response.send_message(embeds=embeds)
+        await context.response.send_message(content="Loading characters...", embed=embed_initial)
+        embeds_full = get_character_data_embed(embed_initial, _type, _id)
+        await context.edit_original_response(content="", embeds=embeds_full)
+
 
 #-------------------------------------
 @tree.command(
