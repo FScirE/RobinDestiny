@@ -39,10 +39,13 @@ Gets formatted embeds for character data for an account
 """
 def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]:
     #get characters data
-    characters_data = destiny.get_request_response(f"/Destiny2/{type}/" +
-                                                   f"Profile/{id}" +
-                                                   f"?components={destiny.component_types['Characters']}"
-                                                   )["characters"]["data"]
+    response = destiny.get_request_response(f"/Destiny2/{type}/" +
+                                            f"Profile/{id}" +
+                                            f"?components={destiny.component_types['Characters']}"
+                                            )
+    if not response:
+        return None
+    characters_data = response["characters"]["data"]
 
     #sort after playtime
     sorted_characters_data = sorted(
@@ -72,7 +75,12 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
         #time since last played
         last = datetime.fromisoformat(character["dateLastPlayed"].replace("Z", "+00:00"))
         now = datetime.now(timezone.utc)
-        diff = now - last
+        time_session = int(character["minutesPlayedThisSession"]) #minutes played can be !=0 despite no session being active
+        session_start = now - timedelta(minutes=time_session)
+        if not time_session or session_start > last:
+            diff = format_timedelta(now - last)
+        else:
+            diff = "Now"
 
         embeds.append(
             Embed(
@@ -83,7 +91,7 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
                 color=Colour.from_rgb(r, g, b)
             )
             .add_field(name="Total time played", value=f"{minutes//60}h {minutes%60}m", inline=False)
-            .add_field(name="Time since last played", value=format_timedelta(diff), inline=False)
+            .add_field(name="Time since last played", value=diff, inline=False)
             .set_thumbnail(url=emblem_url)
             .set_image(url=emblem_bg_url)
         )
@@ -105,9 +113,7 @@ def format_timedelta(time: timedelta) -> str:
     elif hours > 0:
         return_str += f"{hours}h"
         return_str += f" {minutes}m"
-    elif minutes > 7:
-        return_str += f"{minutes}m"
     else:
-        return_str += "Now"
+        return_str += f"{minutes}m"
 
     return return_str

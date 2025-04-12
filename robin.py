@@ -49,7 +49,10 @@ async def lookup(context: discord.Interaction, name: str, tag: int):
     else:
         await context.response.send_message(content="Loading characters...", embed=embed_initial)
         embeds_full = get_character_data_embeds(embed_initial, _type, _id)
-        await context.edit_original_response(content="", embeds=embeds_full)
+        if embeds_full is None:
+            await context.edit_original_response(content="", embeds=[embed_initial, discord.Embed(title="No characters found!")])
+        else:
+            await context.edit_original_response(content="", embeds=embeds_full)
 
 #-------------------------------------
 @tree.command(
