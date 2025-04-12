@@ -40,7 +40,7 @@ Gets formatted embeds for character data for an account
 def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]:
     #get characters data
     response = destiny.get_request_response(f"/Destiny2/{type}/" +
-                                            f"Profile/{id}" +
+                                            f"Profile/{id}/" +
                                             f"?components={destiny.component_types['Characters']}"
                                             )
     if not response:

@@ -1,10 +1,12 @@
 import requests
 import json
 import os
+import base64
 from datetime import datetime, timezone
 from dotenv import get_key
 
-DESTINY_API_KEY = get_key("./.env", "DESTINY_API_KEY")
+DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
+AUTH_CODE = get_key(".env", "OAUTH_CODE")
 ROOT = "https://www.bungie.net/Platform"
 IMG_ROOT = "https://www.bungie.net"
 HEADER = {
@@ -26,9 +28,14 @@ component_types = {
     "CharacterEquipment": 205,
     "ItemPerks": 302,
     "itemStats": 304,
+    #for vendors
+    "Vendors": 400,
+    "VendorCategories": 401,
+    "VendorSales": 402
 }
 hashes = {
     "Nightfall": "2029743966",
+    "Zavala": "69482069"
 }
 classes = {
     671679327 : "Hunter",
@@ -137,3 +144,26 @@ def get_account_data(name, tag):
     }
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
+
+"""
+Gets OAuth access token given an authentication code
+(psa: authentication code is one time use)
+"""
+def get_bearer(code):
+    url = "https://www.bungie.net/platform/app/oauth/token/"
+    id = get_key("./.env", "CLIENT_ID")
+    secret = get_key("./.env", "CLIENT_SECRET")
+
+    coded = base64.b64encode(f"{id}:{secret}".encode()).decode("ascii")
+    header = {
+        "Authorization": "Basic " + coded,
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    info = {
+        "grant_type": "authorization_code",
+        "code": code
+    }
+    data = requests.post(url, data=info, headers=header).json()
+    if "error" in data:
+        return None
+    return data["access_token"]

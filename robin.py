@@ -9,7 +9,7 @@ from src.embeds import (
 )
 import discord
 
-API_KEY = get_key("./.env", "DISCORD_API_KEY")
+API_KEY = get_key(".env", "DISCORD_API_KEY")
 
 #setup destiny data
 setup_destiny_data()
