@@ -1,9 +1,11 @@
 from dotenv import get_key
-from destiny import (
+from src.destiny import (
     setup_destiny_data,
-    read_data_file,
+)
+from src.embeds import (
     get_account_data_embed,
-    get_character_data_embed
+    get_character_data_embeds,
+    get_gm_data_embeds
 )
 import discord
 
@@ -28,9 +30,8 @@ async def on_ready():
     description="Get information about the current active grandmaster nightfall"
 )
 async def gm(context: discord.Interaction):
-    data = read_data_file("data/grandmaster.json")
-    gm_name = data["displayProperties"]["description"]
-    await context.response.send_message(gm_name)
+    embeds = get_gm_data_embeds()
+    await context.response.send_message(embeds=embeds)
 
 #-------------------------------------
 @tree.command(
@@ -47,9 +48,8 @@ async def lookup(context: discord.Interaction, name: str, tag: int):
         await context.response.send_message("User was not found!", ephemeral=True)
     else:
         await context.response.send_message(content="Loading characters...", embed=embed_initial)
-        embeds_full = get_character_data_embed(embed_initial, _type, _id)
+        embeds_full = get_character_data_embeds(embed_initial, _type, _id)
         await context.edit_original_response(content="", embeds=embeds_full)
-
 
 #-------------------------------------
 @tree.command(
@@ -62,7 +62,7 @@ async def robin(context: discord.Interaction):
         )
         .set_thumbnail(url=client.user.avatar.url)
         .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
-        .add_field(name="/lookup", value="Look up information of a destiny account", inline=False)
+        .add_field(name="/lookup [name] [tag]", value="Look up information of a destiny account", inline=False)
     )
 
 if __name__ == "__main__":
