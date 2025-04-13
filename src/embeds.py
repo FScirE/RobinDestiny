@@ -1,3 +1,5 @@
+import os
+import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
 from discord import Embed, Colour
@@ -5,8 +7,71 @@ from discord import Embed, Colour
 """
 Gets formatted embeds with grandmaster nightfall data
 """
-def get_gm_data_embeds():
-    return None
+def get_gm_data_embeds() -> list[Embed]:
+    #data from grandmaster.json
+    gm_data = destiny.read_data_file("data/grandmaster.json")
+    gm_name = gm_data["displayProperties"]["description"]
+    gm_icon_url = destiny.IMG_ROOT + gm_data["displayProperties"]["icon"]
+    gm_bg_url = destiny.IMG_ROOT + gm_data["pgcrImage"]
+    #data from gmdestination.json
+    destination_data = destiny.read_data_file("data/gmdestination.json")
+    dest_name = destination_data["displayProperties"]["name"]
+    dest_description = destination_data["displayProperties"]["description"]
+
+    #categorized modifiers
+    surges = []
+    threat = None
+    overcharge = None
+    other = []
+    directory = os.listdir("data/gm_modifiers")
+    for filename in directory:
+        file_data = destiny.read_data_file(f"data/gm_modifiers/{filename}")
+        modifier_name = file_data["displayProperties"]["name"].lower()
+        if "surge" in modifier_name:
+            file_data["positive"] = True
+            surges.append(file_data)
+        elif "overcharged" in modifier_name:
+            file_data["positive"] = True
+            overcharge = file_data
+        elif "threat" in modifier_name:
+            file_data["positive"] = False
+            threat = file_data
+        else:
+            file_data["positive"] = False
+            other.append(file_data)
+
+    embeds = []
+    #main nightfall embed
+    embeds.append(
+        Embed(
+            title=gm_name,
+            description=f"{dest_name}, {dest_description}"
+        )
+        .set_author(name="Nightfall: Grandmaster", icon_url=gm_icon_url)
+        .set_image(url=gm_bg_url)
+    )
+    #modifier embeds
+    modifiers = surges + [overcharge] + [threat] + other
+    for modifier in modifiers:
+        modifier_name = modifier["displayProperties"]["name"]
+        desc_raw = modifier["displayProperties"]["description"]
+        modifier_url = destiny.IMG_ROOT + modifier["displayProperties"]["icon"]
+
+        #remove or replace variables
+        modifier_desc = re.sub(r"\{[^\{\}]*\}", "25", desc_raw)
+        modifier_desc = re.sub(r"\[[^\[\]]*\] ", "", modifier_desc)
+
+        embed_colour = Colour.from_rgb(40, 138, 255) if modifier["positive"] else Colour.from_rgb(240, 77, 66)
+
+        embeds.append(
+            Embed(
+                title=modifier_name,
+                description=modifier_desc,
+                color=embed_colour
+            )
+            .set_thumbnail(url=modifier_url)
+        )
+    return embeds
 
 """
 Gets formatted embed with account data from name and tag
@@ -41,8 +106,7 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
     #get characters data
     response = destiny.get_request_response(f"/Destiny2/{type}/" +
                                             f"Profile/{id}/" +
-                                            f"?components={destiny.component_types['Characters']}"
-                                            )
+                                            f"?components={destiny.component_types['Characters']}")
     if not response:
         return None
     characters_data = response["characters"]["data"]
@@ -64,7 +128,7 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
 
         #get emblem background
         emblem_hash = character["emblemHash"]
-        emblem_data = destiny.get_request_response(f"/Destiny2/Manifest/DestinyInventoryItemDefinition/{emblem_hash}/")
+        emblem_data = destiny.get_manifest_data("InventoryItem", emblem_hash)
         emblem_bg_url = destiny.IMG_ROOT + emblem_data["secondarySpecial"]
 
         #copy emblem color

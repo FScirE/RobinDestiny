@@ -116,15 +116,18 @@ def setup_destiny_data():
     activities = milestones_data[hashes["Nightfall"]]["activities"]
     for activity in activities:
         nightfall_hash = activity["activityHash"]
-        nightfall_data = get_request_response(f"/Destiny2/Manifest/DestinyActivityDefinition/{nightfall_hash}/")
+        nightfall_data = get_manifest_data("Activity", nightfall_hash)
         if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
             break
     write_data_file(nightfall_data, "data/grandmaster.json")
 
+    #gmdestination.json
+    destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
+    write_data_file(destination_data, "data/gmdestination.json")
+
     #grandmaster modifiers
-    for modifier in nightfall_data["modifiers"]:
-        modifier_hash = modifier["activityModifierHash"]
-        modifier_data = get_request_response(f"/Destiny2/Manifest/DestinyActivityModifierDefinition/{modifier_hash}")
+    for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
+        modifier_data = get_manifest_data("ActivityModifier", modifier_hash)
         ignored_modifiers = [ #irrelevant or incorrect modifiers
             "Double Nightfall Drops",
             "Increased Vanguard Rank",
@@ -147,6 +150,13 @@ def get_account_data(name, tag):
     }
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
+
+"""
+Gets data from manifest
+"""
+def get_manifest_data(entry, hash):
+    data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
+    return data
 
 """
 Gets OAuth access token given an authentication code

@@ -39,7 +39,7 @@ async def gm(context: discord.Interaction):
     description="Get information about a Destiny account"
 )
 @discord.app_commands.describe(
-    name="Bungie username",
+    name="Destiny username",
     tag="The four digits after the '#'"
 )
 async def lookup(context: discord.Interaction, name: str, tag: int):
