@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from dotenv import get_key
 
 DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
-AUTH_CODE = get_key(".env", "OAUTH_CODE")
 ROOT = "https://www.bungie.net/Platform"
 IMG_ROOT = "https://www.bungie.net"
 HEADER = {
@@ -114,8 +113,12 @@ def setup_destiny_data():
     write_data_file(milestones_data, "data/milestones.json")
 
     #grandmaster.json
-    nightfall_hash = milestones_data[hashes["Nightfall"]]["activities"][-1]["activityHash"] #last activity listed in nightfalls is grandmaster
-    nightfall_data = get_request_response(f"/Destiny2/Manifest/DestinyActivityDefinition/{nightfall_hash}/")
+    activities = milestones_data[hashes["Nightfall"]]["activities"]
+    for activity in activities:
+        nightfall_hash = activity["activityHash"]
+        nightfall_data = get_request_response(f"/Destiny2/Manifest/DestinyActivityDefinition/{nightfall_hash}/")
+        if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
+            break
     write_data_file(nightfall_data, "data/grandmaster.json")
 
     #grandmaster modifiers
