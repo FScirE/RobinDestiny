@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
 from discord import Embed, Colour
+from PIL import Image
 
 """
 Gets formatted embeds with grandmaster nightfall data
@@ -13,6 +14,7 @@ def get_gm_data_embeds() -> list[Embed]:
     gm_name = gm_data["displayProperties"]["description"]
     gm_icon_url = destiny.IMG_ROOT + gm_data["displayProperties"]["icon"]
     gm_bg_url = destiny.IMG_ROOT + gm_data["pgcrImage"]
+
     #data from gmdestination.json
     destination_data = destiny.read_data_file("data/gmdestination.json")
     dest_name = destination_data["displayProperties"]["name"]
@@ -60,6 +62,7 @@ def get_gm_data_embeds() -> list[Embed]:
         #remove or replace variables
         modifier_desc = re.sub(r"\{[^\{\}]*\}", "25", desc_raw)
         modifier_desc = re.sub(r"\[[^\[\]]*\] ", "", modifier_desc)
+        modifier_desc += "\n__" + "\u2800"*34 + "__"
 
         embed_colour = Colour.from_rgb(40, 138, 255) if modifier["positive"] else Colour.from_rgb(240, 77, 66)
 

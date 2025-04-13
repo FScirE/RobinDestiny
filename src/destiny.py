@@ -2,6 +2,8 @@ import requests
 import json
 import os
 import base64
+import io
+from PIL import Image
 from datetime import datetime, timezone
 from dotenv import get_key
 
@@ -128,16 +130,26 @@ def setup_destiny_data():
     #grandmaster modifiers
     for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
         modifier_data = get_manifest_data("ActivityModifier", modifier_hash)
-        ignored_modifiers = [ #irrelevant or incorrect modifiers
+        ignored_modifiers = [ #irrelevant and/or incorrect modifiers
             "Double Nightfall Drops",
             "Increased Vanguard Rank",
             "Shielded Foes",
             "Chaff",
             "Randomized Banes"
         ]
-        if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
-            write_data_file(modifier_data, f"data/gm_modifiers/{modifier_hash}.json")
 
+        if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
+            #make sure icon url is the larger icon
+            width = 0
+            for item in modifier_data["displayProperties"]["iconSequences"]:
+                for url in item["frames"]:
+                    image_data = requests.get(IMG_ROOT + url).content
+                    image = Image.open(io.BytesIO(image_data))
+                    if image.width > width:
+                        width = image.width
+                        modifier_data["displayProperties"]["icon"] = url
+
+            write_data_file(modifier_data, f"data/gm_modifiers/{modifier_hash}.json")
     print("Done!")
 
 """
