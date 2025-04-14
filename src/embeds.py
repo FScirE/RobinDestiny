@@ -10,13 +10,13 @@ Gets formatted embeds with grandmaster nightfall data
 """
 def get_gm_data_embeds() -> list[Embed]:
     #data from grandmaster.json
-    gm_data = destiny.read_data_file("data/grandmaster.json")
+    gm_data = destiny.read_data_file(destiny.GM_FILE)
     gm_name = gm_data["displayProperties"]["description"]
     gm_icon_url = destiny.IMG_ROOT + gm_data["displayProperties"]["icon"]
     gm_bg_url = destiny.IMG_ROOT + gm_data["pgcrImage"]
 
     #data from gmdestination.json
-    destination_data = destiny.read_data_file("data/gmdestination.json")
+    destination_data = destiny.read_data_file(destiny.DESTINATION_FILE)
     dest_name = destination_data["displayProperties"]["name"]
     dest_description = destination_data["displayProperties"]["description"]
 
@@ -25,9 +25,9 @@ def get_gm_data_embeds() -> list[Embed]:
     threat = None
     overcharge = None
     other = []
-    directory = os.listdir("data/gm_modifiers")
+    directory = os.listdir(destiny.MODIFIERS_FOLDER)
     for filename in directory:
-        file_data = destiny.read_data_file(f"data/gm_modifiers/{filename}")
+        file_data = destiny.read_data_file(os.path.join(destiny.MODIFIERS_FOLDER, filename))
         modifier_name = file_data["displayProperties"]["name"].lower()
         if "surge" in modifier_name:
             file_data["positive"] = True
@@ -62,7 +62,7 @@ def get_gm_data_embeds() -> list[Embed]:
         #remove or replace variables
         modifier_desc = re.sub(r"\{[^\{\}]*\}", "25", desc_raw)
         modifier_desc = re.sub(r"\[[^\[\]]*\] ", "", modifier_desc)
-        modifier_desc += "\n__" + "\u2800"*34 + "__"
+        modifier_desc += "\n" + "\u2800"*35
 
         embed_colour = Colour.from_rgb(40, 138, 255) if modifier["positive"] else Colour.from_rgb(240, 77, 66)
 

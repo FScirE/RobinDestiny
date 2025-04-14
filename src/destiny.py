@@ -3,6 +3,7 @@ import json
 import os
 import base64
 import io
+import shutil
 from PIL import Image
 from datetime import datetime, timezone
 from dotenv import get_key
@@ -14,6 +15,12 @@ HEADER = {
     "X-API-KEY": DESTINY_API_KEY,
     "Content-Type": "application/json"
 }
+
+DATA_FOLDER = "data"
+MILESTONES_FILE = os.path.join(DATA_FOLDER, "milestones.json")
+GM_FILE = os.path.join(DATA_FOLDER, "grandmaster.json")
+DESTINATION_FILE = os.path.join(DATA_FOLDER, "gmdestination.json")
+MODIFIERS_FOLDER = os.path.join(DATA_FOLDER, "gm_modifiers")
 
 platforms = {
     1: "Xbox",
@@ -83,14 +90,19 @@ def read_data_file(filepath):
         return data
 
 """
-Reads end date of grandmaster entry (could be any) in milestones to see if data needs updating
+Checks if all data exists and reads end date of grandmaster 
+entry (could be any) in milestones to see if data needs updating
 """
-def is_next_week():
-    data = read_data_file("data/milestones.json")
-    if not data: #no existing data
-        print("No existing data")
+def data_outdated_incomplete(): #check if any folder or file is missing
+    if (not os.path.isdir(DATA_FOLDER) or
+        not os.path.isdir(MODIFIERS_FOLDER) or
+        not os.path.isfile(MILESTONES_FILE) or
+        not os.path.isfile(GM_FILE) or
+        not os.path.isfile(DESTINATION_FILE)):
+        print("Data is incomplete")
         return True
-    entry = data[hashes["Nightfall"]]
+    milestone_data = read_data_file(MILESTONES_FILE)
+    entry = milestone_data[hashes["Nightfall"]]
     entry_endtime = datetime.fromisoformat(entry["endDate"].replace("Z", "+00:00"))
     if datetime.now(timezone.utc) > entry_endtime:
         print("Data is outdated")
@@ -103,16 +115,19 @@ Setup destiny json data
 def setup_destiny_data():
     print("Setting up destiny data...")
 
-    #check dates (also if no data exists)
-    if not is_next_week():
+    #check if data is up to date and complete
+    if not data_outdated_incomplete():
         print("Using existing data!")
         return
+
+    if os.path.isdir(DATA_FOLDER): #clear any incomplete data
+        shutil.rmtree(DATA_FOLDER)
 
     print("Gathering data from Bungie.Net API...")
 
     #milestones.json, for checking if up to date in the future
     milestones_data = get_request_response("/Destiny2/Milestones/")
-    write_data_file(milestones_data, "data/milestones.json")
+    write_data_file(milestones_data, MILESTONES_FILE)
 
     #grandmaster.json
     activities = milestones_data[hashes["Nightfall"]]["activities"]
@@ -121,11 +136,11 @@ def setup_destiny_data():
         nightfall_data = get_manifest_data("Activity", nightfall_hash)
         if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
             break
-    write_data_file(nightfall_data, "data/grandmaster.json")
+    write_data_file(nightfall_data, GM_FILE)
 
     #gmdestination.json
     destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
-    write_data_file(destination_data, "data/gmdestination.json")
+    write_data_file(destination_data, DESTINATION_FILE)
 
     #grandmaster modifiers
     for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
@@ -149,7 +164,7 @@ def setup_destiny_data():
                         width = image.width
                         modifier_data["displayProperties"]["icon"] = url
 
-            write_data_file(modifier_data, f"data/gm_modifiers/{modifier_hash}.json")
+            write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
     print("Done!")
 
 """
