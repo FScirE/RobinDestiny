@@ -43,7 +43,8 @@ component_types = {
 }
 hashes = {
     "Nightfall": "2029743966",
-    "Zavala": "69482069"
+    "Zavala": "69482069",
+    "Eververse": "3361454721"
 }
 classes = {
     671679327 : "Hunter",
@@ -90,7 +91,7 @@ def read_data_file(filepath):
         return data
 
 """
-Checks if all data exists and reads end date of grandmaster 
+Checks if all data exists and reads end date of grandmaster
 entry (could be any) in milestones to see if data needs updating
 """
 def data_outdated_incomplete(): #check if any folder or file is missing
@@ -119,6 +120,8 @@ def setup_destiny_data():
     if not data_outdated_incomplete():
         print("Using existing data!")
         return
+
+    auth_key = input("Input authorization key: ")
 
     if os.path.isdir(DATA_FOLDER): #clear any incomplete data
         shutil.rmtree(DATA_FOLDER)
@@ -165,6 +168,12 @@ def setup_destiny_data():
                         modifier_data["displayProperties"]["icon"] = url
 
             write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
+
+    #eververse weeklies
+    #category id 2 = featured bright dust
+    #category id 9 = bright dust items
+    #category id 10 = bright dust flair
+
     print("Done!")
 
 """

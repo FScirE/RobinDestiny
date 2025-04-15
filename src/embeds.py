@@ -47,7 +47,7 @@ def get_gm_data_embeds() -> list[Embed]:
     embeds.append(
         Embed(
             title=gm_name,
-            description=f"{dest_name}, {dest_description}"
+            description=f"{dest_name}\n{dest_description}"
         )
         .set_author(name="Nightfall: Grandmaster", icon_url=gm_icon_url)
         .set_image(url=gm_bg_url)
@@ -62,7 +62,6 @@ def get_gm_data_embeds() -> list[Embed]:
         #remove or replace variables
         modifier_desc = re.sub(r"\{[^\{\}]*\}", "25", desc_raw)
         modifier_desc = re.sub(r"\[[^\[\]]*\] ", "", modifier_desc)
-        modifier_desc += "\n" + "\u2800"*35
 
         embed_colour = Colour.from_rgb(40, 138, 255) if modifier["positive"] else Colour.from_rgb(240, 77, 66)
 
