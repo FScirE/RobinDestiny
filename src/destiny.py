@@ -93,6 +93,25 @@ def read_data_file(filepath):
         return data
 
 """
+Gets data from manifest
+"""
+def get_manifest_data(entry, hash):
+    data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
+    return data
+
+"""
+Checks if refresh token exists or if outdated
+"""
+def check_refresh_token():
+    if not os.path.isfile(OAUTH_FILE):
+        return False
+    data = read_data_file(OAUTH_FILE)
+    expiry_date = datetime.fromisoformat(data["expiryDate"])
+    if datetime.now(timezone.utc) > expiry_date:
+        return False
+    return True
+
+"""
 Checks if all data exists and reads end date of grandmaster
 entry (could be any) in milestones to see if data needs updating
 """
@@ -226,13 +245,6 @@ def get_account_data(name, tag):
     return account_data
 
 """
-Gets data from manifest
-"""
-def get_manifest_data(entry, hash):
-    data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
-    return data
-
-"""
 Gets OAuth access token given an authentication code, or using refresh token,
 and saves refresh token to file
 (psa: authentication code is one time use)
@@ -269,15 +281,3 @@ def get_set_oauth(code = None):
     }
     write_data_file(refresh_data, OAUTH_FILE)
     return data["access_token"]
-
-"""
-Checks if refresh token exists or if outdated
-"""
-def check_refresh_token():
-    if not os.path.isfile(OAUTH_FILE):
-        return False
-    data = read_data_file(OAUTH_FILE)
-    expiry_date = datetime.fromisoformat(data["expiryDate"])
-    if datetime.now(timezone.utc) > expiry_date:
-        return False
-    return True
