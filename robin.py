@@ -12,7 +12,8 @@ import discord
 API_KEY = get_key(".env", "DISCORD_API_KEY")
 
 #setup destiny data
-setup_destiny_data()
+if not setup_destiny_data():
+    exit(-1)
 
 #start discord bot
 intents = discord.Intents.default()

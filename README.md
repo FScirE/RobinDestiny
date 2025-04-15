@@ -6,13 +6,12 @@
 - Getting weekly grandmaster nightfall information
 
 ## .env file keys
-### Currently used:
 - DESTINY_API_KEY
 - DISCORD_API_KEY
-### Currently unused:
-- OAUTH_URL
 - CLIENT_ID
 - CLIENT_SECRET
 - MEMBERSHIP_TYPE
 - MEMBERSHIP_ID
-- CHARACTER_ID
+- HUNTER_ID
+- WARLOCK_ID
+- TITAN_ID
