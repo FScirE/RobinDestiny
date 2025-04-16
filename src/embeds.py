@@ -2,7 +2,8 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
-from discord import Embed, Colour
+from discord import Embed, Colour, ButtonStyle
+from discord.ui import View, Button
 from PIL import Image
 
 """
@@ -162,6 +163,81 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
             .set_image(url=emblem_bg_url)
         )
     return embeds
+
+def get_eververse_data_embeds(category) -> tuple[list[Embed], View]:
+    embeds = []
+    view = View()
+
+    bright_dust_icon = "https://www.bungie.net/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
+
+    #all available types of cosmetics
+    available_categories = []
+
+    #look through all items
+    folder = os.listdir(destiny.EVERVERSE_FOLDER)
+    for file in folder:
+        item_data = destiny.read_data_file(os.path.join(destiny.EVERVERSE_FOLDER, file))
+        item_type = item_data["itemTypeDisplayName"]
+
+        if item_type not in available_categories:
+            available_categories.append(item_type)
+
+        if item_type != category:
+            continue
+
+        #item information
+        item_name = item_data["displayProperties"]["name"]
+        item_text = item_data["flavorText"]
+        item_price = item_data["price"]
+        if not item_text: #use description if no flavor text
+            item_text = item_data["displayProperties"]["description"]
+        item_path = destiny.IMG_ROOT + item_data["displayProperties"]["icon"]
+        if "screenshot" in item_data:
+            item_image = destiny.IMG_ROOT + item_data["screenshot"]
+        else:
+            item_image = None
+
+        #rarity color
+        rarity = item_data["inventory"]["tierTypeName"]
+        if rarity == "Exotic":
+            item_colour = Colour.from_rgb(205, 173, 54)
+        elif rarity == "Legendary":
+            item_colour = Colour.from_rgb(79, 54, 99)
+        else:
+            item_colour = Colour.from_rgb(86, 126, 157)
+
+        #create embed
+        embed = Embed(
+            title=item_name,
+            description=item_text,
+            color=item_colour
+        )
+        embed.set_thumbnail(url=item_path)
+        embed.set_footer(text=str(item_price), icon_url=bright_dust_icon)
+        if item_image:
+            embed.set_image(url=item_image)
+        embeds.append(embed)
+
+    #insert header
+    if category is None:
+        eververse_header = Embed(title="Select Item Category")
+    else:
+        eververse_header = Embed(title=category + "s")
+    eververse_header.set_author(name="Weekly Eververse Items")
+    embeds.insert(0, eververse_header)
+
+    #create buttons to change category
+    for existing in available_categories:
+        if category == existing:
+            button_style = ButtonStyle.blurple
+        else:
+            button_style = ButtonStyle.secondary
+        view.add_item(Button(
+            style=button_style,
+            label=existing + "s",
+            custom_id=existing
+        ))
+    return embeds, view
 
 """
 Formats a datetime object for pretty printing

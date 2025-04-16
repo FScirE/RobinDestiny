@@ -5,7 +5,8 @@ from src.destiny import (
 from src.embeds import (
     get_account_data_embed,
     get_character_data_embeds,
-    get_gm_data_embeds
+    get_gm_data_embeds,
+    get_eververse_data_embeds
 )
 import discord
 
@@ -25,7 +26,35 @@ async def on_ready():
     await tree.sync()
     print("Robin D. Estiny: Running!")
 
-#-------------------------------------
+#helper functions ---------------------------------------------------------
+"""
+Gets embeds and view from eververse creator and set callbacks for buttons
+"""
+def get_set_eververse(arg = None):
+    embeds, view = get_eververse_data_embeds(arg)
+    for button in view.children:
+        button.callback = button_callback
+    return embeds, view
+
+#--------------------------------------------------------------------------
+async def button_callback(context: discord.Interaction):
+    id = context.data["custom_id"]
+    if "#" in id: #user search
+        pass
+    else:
+        embeds, view = get_set_eververse(id)
+        await context.response.edit_message(embeds=embeds, view=view)
+
+#--------------------------------------------------------------------------
+@tree.command(
+    name="eververse",
+    description="See all weekly bright dust items from eververse"
+)
+async def eververse(context: discord.Interaction):
+    embeds, view = get_set_eververse()
+    await context.response.send_message(embeds=embeds, view=view)
+
+#--------------------------------------------------------------------------
 @tree.command(
     name="gm",
     description="Get information about the current active grandmaster nightfall"
@@ -34,7 +63,7 @@ async def gm(context: discord.Interaction):
     embeds = get_gm_data_embeds()
     await context.response.send_message(embeds=embeds)
 
-#-------------------------------------
+#--------------------------------------------------------------------------
 @tree.command(
     name="lookup",
     description="Get information about a Destiny account"
@@ -55,7 +84,7 @@ async def lookup(context: discord.Interaction, name: str, tag: int):
         else:
             await context.edit_original_response(content="", embeds=embeds_full)
 
-#-------------------------------------
+#--------------------------------------------------------------------------
 @tree.command(
     name="robin",
     description=f"See all the things you can do with Robin D. Estiny"

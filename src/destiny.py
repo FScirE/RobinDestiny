@@ -235,10 +235,14 @@ def setup_destiny_data():
         for category in categories:
             if category["displayCategoryIndex"] in [2, 9, 10]: #add items from the 3 eververse bright dust weekly shops
                 for item_idx in category["itemIndexes"]:
-                    item_hash = data["sales"]["data"][str(item_idx)]["itemHash"]
+                    item = data["sales"]["data"][str(item_idx)]
+                    item_hash = item["itemHash"]
+                    price = item["costs"][0]["quantity"]
                     if item_hash in gathered: #ignore shared items
                         continue
                     item_data = get_manifest_data("InventoryItem", item_hash)
+                    item_data["price"] = price #add bright dust price
+                    item_data
                     if item_data["itemTypeDisplayName"] == "Consumable":
                         continue
                     gathered.append(item_hash)
