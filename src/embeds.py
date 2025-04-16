@@ -57,7 +57,7 @@ def get_gm_data_embeds() -> list[Embed]:
     for modifier in modifiers:
         modifier_name = modifier["displayProperties"]["name"]
         desc_raw = modifier["displayProperties"]["description"]
-        modifier_url = destiny.IMG_ROOT + modifier["displayProperties"]["iconSequences"][0]["Frames"][0]
+        modifier_url = destiny.IMG_ROOT + modifier["displayProperties"]["iconSequences"][0]["frames"][0]
 
         #remove or replace variables
         modifier_desc = re.sub(r"\{[^\{\}]*\}", "25", desc_raw)
