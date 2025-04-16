@@ -28,6 +28,8 @@ platforms = {
     1: "Xbox",
     2: "Playstation",
     3: "Steam",
+    4: "Battle.net",
+    5: "Stadia",
     6: "Epic Games"
 }
 component_types = {

@@ -28,22 +28,44 @@ async def on_ready():
 
 #helper functions ---------------------------------------------------------
 """
-Gets embeds and view from eververse creator and set callbacks for buttons
+Responds with embeds and view from eververse creator and sets callbacks for buttons
 """
-def get_set_eververse(arg = None):
+async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
     embeds, view = get_eververse_data_embeds(arg)
     for button in view.children:
         button.callback = button_callback
-    return embeds, view
+    if first:
+        await context.response.send_message(embeds=embeds, view=view)
+    else:
+        await context.response.edit_message(embeds=embeds, view=view)
+
+"""
+Handles lookup response after account data and embed has been gathered
+"""
+async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: discord.ui.View, type: int, id: str):
+    for button in view.children:
+        button.callback = button_callback
+    if first:
+        await context.response.send_message(embeds=embeds_initial)
+    else:
+        await context.response.edit_message(embeds=embeds_initial, view=None)
+    embeds_full = get_character_data_embeds(embeds_initial, type, id)
+    await context.edit_original_response(embeds=embeds_full, view=view)
 
 #--------------------------------------------------------------------------
 async def button_callback(context: discord.Interaction):
-    id = context.data["custom_id"]
-    if "#" in id: #user search
-        pass
+    contents = context.data["custom_id"].split("%", 1)
+    if contents[0] == "lookup": #user lookup
+        splitted = contents[1].split(";")
+        name = splitted[0]
+        tag = splitted[1]
+        type = splitted[2]
+        embeds_initial, view, type, id = get_account_data_embed(name, tag, int(type))
+        await handle_character_lookup(False, context, embeds_initial, view, type, id)
+    elif contents[0] == "eververse": #eververse
+        await handle_eververse(False, context, contents[1])
     else:
-        embeds, view = get_set_eververse(id)
-        await context.response.edit_message(embeds=embeds, view=view)
+        pass
 
 #--------------------------------------------------------------------------
 @tree.command(
@@ -51,8 +73,7 @@ async def button_callback(context: discord.Interaction):
     description="See all weekly bright dust items from eververse"
 )
 async def eververse(context: discord.Interaction):
-    embeds, view = get_set_eververse()
-    await context.response.send_message(embeds=embeds, view=view)
+    await handle_eververse(True, context)
 
 #--------------------------------------------------------------------------
 @tree.command(
@@ -73,16 +94,12 @@ async def gm(context: discord.Interaction):
     tag="The four digits after the '#'"
 )
 async def lookup(context: discord.Interaction, name: str, tag: int):
-    embed_initial, _type, _id = get_account_data_embed(name, str(tag))
-    if embed_initial is None:
+    embeds_initial, view, type, id = get_account_data_embed(name, str(tag))
+    if embeds_initial is None:
         await context.response.send_message("User was not found!", ephemeral=True)
     else:
-        await context.response.send_message(content="Loading characters...", embed=embed_initial)
-        embeds_full = get_character_data_embeds(embed_initial, _type, _id)
-        if embeds_full is None:
-            await context.edit_original_response(content="", embeds=[embed_initial, discord.Embed(title="No characters found!")])
-        else:
-            await context.edit_original_response(content="", embeds=embeds_full)
+        await handle_character_lookup(True, context, embeds_initial, view, type, id)
+
 
 #--------------------------------------------------------------------------
 @tree.command(

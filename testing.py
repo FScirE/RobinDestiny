@@ -21,4 +21,6 @@ destiny.setup_destiny_data()
 #                             f"?components={destiny.component_types['VendorCategories']}," +
 #                             f"{destiny.component_types['VendorSales']}", token)
 
+data = destiny.get_account_data("FScirE", "0322")
+
 print("end")

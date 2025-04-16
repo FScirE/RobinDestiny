@@ -44,6 +44,7 @@ def get_gm_data_embeds() -> list[Embed]:
             other.append(file_data)
 
     embeds = []
+
     #main nightfall embed
     embeds.append(
         Embed(
@@ -53,6 +54,7 @@ def get_gm_data_embeds() -> list[Embed]:
         .set_author(name="Nightfall: Grandmaster", icon_url=gm_icon_url)
         .set_image(url=gm_bg_url)
     )
+
     #modifier embeds
     modifiers = surges + [overcharge] + [threat] + other
     for modifier in modifiers:
@@ -80,38 +82,67 @@ def get_gm_data_embeds() -> list[Embed]:
 Gets formatted embed with account data from name and tag
 Also returns membership type and id
 """
-def get_account_data_embed(name: str, tag: int) -> tuple[Embed, int, str]:
+def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed, View, int, str]:
     #get account data
     account_data = destiny.get_account_data(name, tag)
     if not account_data:
-        return None, None, None
+        return None, None, None, None
 
-    #select primary profile (either cross saved primary or first in list)
-    if account_data[0]["crossSaveOverride"]:
-        membership_type = account_data[0]["crossSaveOverride"]
+    #keep track of which account types exist
+    membership_types = [m["membershipType"] for m in account_data]
+
+    #select primary profile (either cross saved primary or first in list) if not predetermined
+    if type or account_data[0]["crossSaveOverride"]:
+        membership_type = account_data[0]["crossSaveOverride"] if not type else type
         for data in account_data:
             if data["membershipType"] == membership_type:
+                display_name = data["displayName"]
                 membership_id = data["membershipId"]
                 membership_url = destiny.IMG_ROOT + data["iconPath"]
     else:
+        display_name = account_data[0]["displayName"]
         membership_type = account_data[0]["membershipType"]
         membership_id = account_data[0]["membershipId"]
         membership_url = destiny.IMG_ROOT + account_data[0]["iconPath"]
 
-    embed = Embed(title=f"{name}#{str(tag).zfill(4)}")
-    embed.set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
-    return embed, membership_type, membership_id
+    #create embed
+    embeds = []
+    embeds.append(
+        Embed(
+            title=f"{name}#{str(tag).zfill(4)}",
+            description="Display name: " + display_name)
+        .set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
+    )
+    embeds.append(
+        Embed(description="Loading characters...")
+    )
+
+    #create buttons view for each profile type
+    view = View(timeout=None)
+    for item in membership_types:
+        if item == membership_type:
+            button_style = ButtonStyle.primary
+        else:
+            button_style = ButtonStyle.secondary
+        view.add_item(Button(
+            style=button_style,
+            label=destiny.platforms[item],
+            custom_id=f"lookup%{name};{tag};{item}"
+        ))
+    return embeds, view, membership_type, membership_id
 
 """
 Gets formatted embeds for character data for an account
 """
-def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]:
+def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[Embed]:
+    embeds = [initial[0]]
+
     #get characters data
     response = destiny.get_request_response(f"/Destiny2/{type}/" +
                                             f"Profile/{id}/" +
                                             f"?components={destiny.component_types['Characters']}")
     if not response:
-        return None
+        return embeds + [Embed(title="No characters found!")]
     characters_data = response["characters"]["data"]
 
     #sort after playtime
@@ -122,7 +153,6 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
     )
 
     #start building embeds
-    embeds = [initial]
     for _, character in sorted_characters_data:
         minutes = int(character["minutesPlayedTotal"])
         guardian_class = destiny.classes[character["classHash"]]
@@ -164,9 +194,9 @@ def get_character_data_embeds(initial: Embed, type: int, id: str) -> list[Embed]
         )
     return embeds
 
-def get_eververse_data_embeds(category) -> tuple[list[Embed], View]:
+def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
     embeds = []
-    view = View()
+    view = View(timeout=None)
 
     bright_dust_icon = "https://www.bungie.net/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
 
@@ -229,13 +259,13 @@ def get_eververse_data_embeds(category) -> tuple[list[Embed], View]:
     #create buttons to change category
     for existing in available_categories:
         if category == existing:
-            button_style = ButtonStyle.blurple
+            button_style = ButtonStyle.primary
         else:
             button_style = ButtonStyle.secondary
         view.add_item(Button(
             style=button_style,
             label=existing + "s",
-            custom_id=existing
+            custom_id="eververse%" + existing
         ))
     return embeds, view
 
