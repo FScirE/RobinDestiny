@@ -70,7 +70,7 @@ async def button_callback(context: discord.Interaction):
 #--------------------------------------------------------------------------
 @tree.command(
     name="eververse",
-    description="See all weekly bright dust items from eververse"
+    description="Get all weekly bright dust offers from eververse"
 )
 async def eververse(context: discord.Interaction):
     await handle_eververse(True, context)
