@@ -100,6 +100,16 @@ def get_manifest_data(entry, hash):
     return data
 
 """
+Get response from GET request with OAuth requirement with access key and components
+"""
+def get_request_response_oauth(path, access_token):
+    header = {**HEADER, **{"Authorization": "Bearer " + access_token}}
+    data = requests.get(ROOT + path, headers=header)
+    if "Response" not in data.json():
+        return None
+    return data.json()["Response"]
+
+"""
 Checks if refresh token exists or if outdated
 """
 def check_refresh_token():
@@ -193,14 +203,14 @@ def setup_destiny_data():
         ]
         if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
             #make sure icon url is the larger icon
-            width = 0
-            for item in modifier_data["displayProperties"]["iconSequences"]:
-                for url in item["frames"]:
-                    image_data = requests.get(IMG_ROOT + url).content
-                    image = Image.open(io.BytesIO(image_data))
-                    if image.width > width:
-                        width = image.width
-                        modifier_data["displayProperties"]["icon"] = url
+            # width = 0
+            # for item in modifier_data["displayProperties"]["iconSequences"]:
+            #     for url in item["frames"]:
+            #         image_data = requests.get(IMG_ROOT + url).content
+            #         image = Image.open(io.BytesIO(image_data))
+            #         if image.width > width:
+            #             width = image.width
+            #             modifier_data["displayProperties"]["icon"] = url
             write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
 
     #eververse weeklies
@@ -212,12 +222,12 @@ def setup_destiny_data():
         "warlock": get_key(".env", "WARLOCK_ID"),
         "titan": get_key(".env", "TITAN_ID")
     }
-    header = {**HEADER, **{"Authorization": "Bearer " + access_token}}
+    gathered = [] #keep track of item hashes to ignore shared items
     for key, ch_id in ch_ids.items():
         print(f"    {key.title()}...")
-        data = requests.get(ROOT + f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
+        data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
                             f"?components={component_types['VendorCategories']}," +
-                            f"{component_types['VendorSales']}", headers=header).json()["Response"]
+                            f"{component_types['VendorSales']}", access_token)
         #category id 2 = featured bright dust
         #category id 9 = bright dust items
         #category id 10 = bright dust flair
@@ -226,10 +236,13 @@ def setup_destiny_data():
             if category["displayCategoryIndex"] in [2, 9, 10]: #add items from the 3 eververse bright dust weekly shops
                 for item_idx in category["itemIndexes"]:
                     item_hash = data["sales"]["data"][str(item_idx)]["itemHash"]
+                    if item_hash in gathered: #ignore shared items
+                        continue
                     item_data = get_manifest_data("InventoryItem", item_hash)
                     if item_data["itemTypeDisplayName"] == "Consumable":
                         continue
-                    write_data_file(item_data, os.path.join(EVERVERSE_FOLDER, key, str(item_hash) + ".json"))
+                    gathered.append(item_hash)
+                    write_data_file(item_data, os.path.join(EVERVERSE_FOLDER, str(item_hash) + ".json"))
     print("Done!")
     return True
 
