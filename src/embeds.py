@@ -45,6 +45,20 @@ def get_gm_data_embeds() -> list[Embed]:
 
     embeds = []
 
+    #nightfall weapon embed
+    weapon_data = destiny.read_data_file(destiny.GM_WEAPON_FILE)
+    weapon_name = weapon_data["displayProperties"]["name"]
+    weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
+    weapon_description = weapon_data["flavorText"]
+    embeds.append(
+        Embed(
+            title=weapon_name,
+            description=weapon_description
+        )
+        .set_author(name="Weekly nightfall weapon")
+        .set_thumbnail(url=weapon_url)
+    )
+
     #main nightfall embed
     embeds.append(
         Embed(
@@ -198,8 +212,6 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
     embeds = []
     view = View(timeout=None)
 
-    bright_dust_icon = "https://www.bungie.net/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
-
     #all available types of cosmetics
     available_categories = []
 
@@ -243,7 +255,7 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
             color=item_colour
         )
         embed.set_thumbnail(url=item_path)
-        embed.set_footer(text=str(item_price), icon_url=bright_dust_icon)
+        embed.set_footer(text=str(item_price), icon_url=destiny.BRIGHT_DUST_URL)
         if item_image:
             embed.set_image(url=item_image)
         embeds.append(embed)

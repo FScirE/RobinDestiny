@@ -21,9 +21,26 @@ MILESTONES_FILE = os.path.join(DATA_FOLDER, "milestones.json")
 GM_FILE = os.path.join(DATA_FOLDER, "grandmaster.json")
 DESTINATION_FILE = os.path.join(DATA_FOLDER, "gmdestination.json")
 MODIFIERS_FOLDER = os.path.join(DATA_FOLDER, "gm_modifiers")
+GM_WEAPON_FILE = os.path.join(DATA_FOLDER, "gmweapon.json")
 OAUTH_FILE = "./oauth.json"
 EVERVERSE_FOLDER = os.path.join(DATA_FOLDER, "eververse")
 
+BRIGHT_DUST_URL = IMG_ROOT + "/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
+KINETIC_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_3385a924fd3ccb92c343ade19f19a370.png"
+ARC_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_092d066688b879c807c3b460afdd61e6.png"
+SOLAR_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_2a1773e10968f2d088b97c22b22bba9e.png"
+VOID_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_ceb2f6197dccf3958bb31cc783eb97a0.png"
+STASIS_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_530c4c3e7981dc2aefd24fd3293482bf.png"
+STRAND_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_b2fe51a94f3533f97079dfa0d27a4096.png"
+
+elements = {
+    1: ("Kinetic", KINETIC_URL),
+    2: ("Arc", ARC_URL),
+    3: ("Solar", SOLAR_URL),
+    4: ("Void", VOID_URL),
+    6: ("Stasis", STASIS_URL),
+    7: ("Strand", STRAND_URL)
+}
 platforms = {
     1: "Xbox",
     2: "Playstation",
@@ -47,7 +64,7 @@ component_types = {
 }
 hashes = {
     "Nightfall": "2029743966",
-    "Zavala": "69482069",
+    "FocusedDecoding": "2232145065",
     "Eververse": "3361454721"
 }
 classes = {
@@ -133,6 +150,7 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         not os.path.isfile(MILESTONES_FILE) or
         not os.path.isfile(GM_FILE) or
         not os.path.isfile(DESTINATION_FILE) or
+        not os.path.isfile(GM_WEAPON_FILE) or
         not os.path.isdir(EVERVERSE_FOLDER)):
         print("Data is incomplete")
         return True
@@ -161,6 +179,14 @@ def setup_destiny_data():
         return False
     print("  Access token acquired")
 
+    m_type = get_key(".env", "MEMBERSHIP_TYPE")
+    m_id = get_key(".env", "MEMBERSHIP_ID")
+    ch_ids = {
+        "hunter": get_key(".env", "HUNTER_ID"),
+        "warlock": get_key(".env", "WARLOCK_ID"),
+        "titan": get_key(".env", "TITAN_ID")
+    }
+
     #check if data is up to date and complete
     if not data_outdated_incomplete():
         print("Using existing data!")
@@ -170,7 +196,7 @@ def setup_destiny_data():
     if os.path.isdir(DATA_FOLDER):
         shutil.rmtree(DATA_FOLDER)
 
-    print("Gathering data from Bungie.Net API...")
+    print("Gathering data from Bungie.Net API:")
 
     #milestones.json, for checking if up to date in the future
     print("  Getting milestones...")
@@ -215,29 +241,37 @@ def setup_destiny_data():
             #             modifier_data["displayProperties"]["icon"] = url
             write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
 
+    #nightfall weapon
+    print("  Getting gm weapon...")
+    focusing_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/Vendors/2232145065/" +
+                                f"?components={component_types['VendorCategories']}," +
+                                f"{component_types['VendorSales']}", access_token)
+    categories = focusing_data["categories"]["data"]["categories"]
+    for category in categories:
+        #category id 2 = featured nf weapon shop
+        if category["displayCategoryIndex"] == 2:
+            item_idx = category["itemIndexes"][1] #second item is adept
+            item = focusing_data["sales"]["data"][str(item_idx)]
+            item_data = get_manifest_data("InventoryItem", item["itemHash"])
+            write_data_file(item_data, GM_WEAPON_FILE)
+            break
+
     #eververse weeklies
-    print("  Getting eververse for:")
-    m_type = get_key(".env", "MEMBERSHIP_TYPE")
-    m_id = get_key(".env", "MEMBERSHIP_ID")
-    ch_ids = {
-        "hunter": get_key(".env", "HUNTER_ID"),
-        "warlock": get_key(".env", "WARLOCK_ID"),
-        "titan": get_key(".env", "TITAN_ID")
-    }
+    print("  Getting eververse:")
     gathered = [] #keep track of item hashes to ignore shared items
     for key, ch_id in ch_ids.items():
         print(f"    {key.title()}...")
-        data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
+        eververse_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
                             f"?components={component_types['VendorCategories']}," +
                             f"{component_types['VendorSales']}", access_token)
         #category id 2 = featured bright dust
         #category id 9 = bright dust items
         #category id 10 = bright dust flair
-        categories = data["categories"]["data"]["categories"]
+        categories = eververse_data["categories"]["data"]["categories"]
         for category in categories:
             if category["displayCategoryIndex"] in [2, 9, 10]: #add items from the 3 eververse bright dust weekly shops
                 for item_idx in category["itemIndexes"]:
-                    item = data["sales"]["data"][str(item_idx)]
+                    item = eververse_data["sales"]["data"][str(item_idx)]
                     item_hash = item["itemHash"]
                     price = item["costs"][0]["quantity"]
                     if item_hash in gathered: #ignore shared items
