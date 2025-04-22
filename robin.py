@@ -5,6 +5,7 @@ from src.destiny import (
 from src.embeds import (
     get_account_data_embed,
     get_character_data_embeds,
+    get_search_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds
 )
@@ -55,8 +56,17 @@ async def handle_character_lookup(first: bool, context: discord.Interaction, emb
 """
 Handles the page scrolling etc of the user search
 """
-async def handle_find(name: str, page: int = 0):
-    pass
+async def handle_search(first: bool, context: discord.Interaction, name: str, page: int = 0):
+    embed, view = get_search_embed(name, page)
+    if first and embed is None:
+        await context.response.send_message("No users found!", ephemeral=True)
+    else:
+        for button in view.children:
+            button.callback = button_callback
+        if first:
+            await context.response.send_message(embed=embed, view=view)
+        else:
+            await context.response.edit_message(embed=embed, view=view)
 
 #--------------------------------------------------------------------------
 async def button_callback(context: discord.Interaction):
@@ -65,9 +75,14 @@ async def button_callback(context: discord.Interaction):
         splitted = contents[1].split(";")
         name = splitted[0]
         tag = splitted[1]
-        type = splitted[2]
-        embeds_initial, view, type, id = get_account_data_embed(name, tag, int(type))
+        type = int(splitted[2])
+        embeds_initial, view, type, id = get_account_data_embed(name, tag, type)
         await handle_character_lookup(False, context, embeds_initial, view, type, id)
+    elif contents[0] == "search": #user search
+        splitted = contents[1].split(";")
+        name = splitted[0]
+        page = int(splitted[1])
+        await handle_search(False, context, name, page)
     elif contents[0] == "eververse": #eververse
         await handle_eververse(False, context, contents[1])
     else:
@@ -93,29 +108,21 @@ async def gm(context: discord.Interaction):
 #--------------------------------------------------------------------------
 @tree.command(
     name="lookup",
-    description="Get information about a Destiny account"
+    description="Search for and get information about a Destiny account"
 )
 @discord.app_commands.describe(
     name="Destiny username",
     tag="The four digits after the '#'"
 )
-async def lookup(context: discord.Interaction, name: str, tag: int):
-    embeds_initial, view, type, id = get_account_data_embed(name, str(tag))
-    if embeds_initial is None:
-        await context.response.send_message("User was not found!", ephemeral=True)
+async def lookup(context: discord.Interaction, name: str, tag: int = None):
+    if tag is None:
+        await handle_search(True, context, name)
     else:
-        await handle_character_lookup(True, context, embeds_initial, view, type, id)
-
-#--------------------------------------------------------------------------
-@tree.command(
-    name="find",
-    description="Search for full destiny account name with user name"
-)
-@discord.app_commands.describe(
-    name="Destiny username"
-)
-async def find(context: discord.Interaction, name: str):
-    await handle_find(name)
+        embeds_initial, view, type, id = get_account_data_embed(name, str(tag))
+        if embeds_initial is None:
+            await context.response.send_message("User was not found!", ephemeral=True)
+        else:
+            await handle_character_lookup(True, context, embeds_initial, view, type, id)
 
 #--------------------------------------------------------------------------
 @tree.command(

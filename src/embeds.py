@@ -211,8 +211,50 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
 """
 Gets embed for a page of user search results
 """
-def get_find_embed(name: str, page: int) -> tuple[Embed, View]:
-    return None
+def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
+    #get search results
+    payload = {
+        "displayNamePrefix": name
+    }
+    search_data = destiny.post_request_response(f"/User/Search/GlobalName/{page}/", payload)
+    has_more = search_data["hasMore"]
+    results = search_data["searchResults"][:25] #avoid overfill
+    if not results:
+        return None, None
+
+    #build embed
+    embed = Embed(
+        title=f"Search results for: {name}"
+    )
+    for user in results:
+        user_name = user["bungieGlobalDisplayName"]
+        user_tag = user["bungieGlobalDisplayNameCode"]
+        platforms = [destiny.platforms[m["membershipType"]] for m in user["destinyMemberships"]]
+        embed.add_field(
+            name=f"{user_name}#{str(user_tag).zfill(4)}",
+            value=f"{', '.join(platforms)}",
+            inline=True)
+    embed.set_footer(text=f"Page: {page + 1}")
+
+    #build view
+    view = View(timeout=None)
+    if page > 0:
+        view.add_item(
+            Button(
+                style=ButtonStyle.primary,
+                label="< Previous page",
+                custom_id=f"search%{name};{page - 1}"
+            )
+        )
+    if has_more:
+        view.add_item(
+            Button(
+                style=ButtonStyle.primary,
+                label="Next page >",
+                custom_id=f"search%{name};{page + 1}"
+            )
+        )
+    return embed, view
 
 """
 Gets embed for a selected category in eververse

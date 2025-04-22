@@ -20,9 +20,9 @@ print("start")
 
 # data = destiny.get_manifest_data("DamageType", "3949783978")
 
-payload = {
-    "displayNamePrefix": "FScirE"
-}
-data = destiny.post_request_response("/User/Search/GlobalName/0/", payload)
+# payload = {
+#     "displayNamePrefix": "Tom"
+# }
+# data = destiny.post_request_response("/User/Search/GlobalName/0/", payload)
 
 print("end")
