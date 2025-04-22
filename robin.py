@@ -52,6 +52,12 @@ async def handle_character_lookup(first: bool, context: discord.Interaction, emb
     embeds_full = get_character_data_embeds(embeds_initial, type, id)
     await context.edit_original_response(embeds=embeds_full, view=view)
 
+"""
+Handles the page scrolling etc of the user search
+"""
+async def handle_find(name: str, page: int = 0):
+    pass
+
 #--------------------------------------------------------------------------
 async def button_callback(context: discord.Interaction):
     contents = context.data["custom_id"].split("%", 1)
@@ -100,6 +106,16 @@ async def lookup(context: discord.Interaction, name: str, tag: int):
     else:
         await handle_character_lookup(True, context, embeds_initial, view, type, id)
 
+#--------------------------------------------------------------------------
+@tree.command(
+    name="find",
+    description="Search for full destiny account name with user name"
+)
+@discord.app_commands.describe(
+    name="Destiny username"
+)
+async def find(context: discord.Interaction, name: str):
+    await handle_find(name)
 
 #--------------------------------------------------------------------------
 @tree.command(

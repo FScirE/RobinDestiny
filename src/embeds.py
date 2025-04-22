@@ -208,6 +208,15 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
+"""
+Gets embed for a page of user search results
+"""
+def get_find_embed(name: str, page: int) -> tuple[Embed, View]:
+    return None
+
+"""
+Gets embed for a selected category in eververse
+"""
 def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
     embeds = []
     view = View(timeout=None)
