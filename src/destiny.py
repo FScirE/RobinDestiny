@@ -157,7 +157,8 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         print("Data is incomplete")
         return True
     milestone_data = read_data_file(MILESTONES_FILE)
-    entry = milestone_data[hashes["Nightfall"]]
+    first = list(milestone_data)[0]
+    entry = milestone_data[first]
     entry_endtime = datetime.fromisoformat(entry["endDate"].replace("Z", "+00:00"))
     if datetime.now(timezone.utc) > entry_endtime:
         print("Data is outdated")
@@ -207,41 +208,48 @@ def setup_destiny_data():
 
     #grandmaster.json
     print("  Getting grandmaster...")
-    activities = milestones_data[hashes["Nightfall"]]["activities"]
-    for activity in activities:
-        nightfall_hash = activity["activityHash"]
-        nightfall_data = get_manifest_data("Activity", nightfall_hash)
-        if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
-            break
-    write_data_file(nightfall_data, GM_FILE)
+    if hashes["Nightfall"] in milestones_data:
+        #if gm exists
+        activities = milestones_data[hashes["Nightfall"]]["activities"]
+        for activity in activities:
+            nightfall_hash = activity["activityHash"]
+            nightfall_data = get_manifest_data("Activity", nightfall_hash)
+            if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
+                break
+        write_data_file(nightfall_data, GM_FILE)
 
-    #gmdestination.json
-    print("  Getting gm destination...")
-    destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
-    write_data_file(destination_data, DESTINATION_FILE)
+        #gmdestination.json
+        print("  Getting gm destination...")
+        destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
+        write_data_file(destination_data, DESTINATION_FILE)
 
-    #grandmaster modifiers
-    print("  Getting gm modifiers...")
-    for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
-        modifier_data = get_manifest_data("ActivityModifier", modifier_hash)
-        ignored_modifiers = [ #irrelevant and/or incorrect modifiers
-            "Double Nightfall Drops",
-            "Increased Vanguard Rank",
-            "Shielded Foes",
-            "Chaff",
-            "Randomized Banes"
-        ]
-        if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
-            #make sure icon url is the larger icon
-            # width = 0
-            # for item in modifier_data["displayProperties"]["iconSequences"]:
-            #     for url in item["frames"]:
-            #         image_data = requests.get(IMG_ROOT + url).content
-            #         image = Image.open(io.BytesIO(image_data))
-            #         if image.width > width:
-            #             width = image.width
-            #             modifier_data["displayProperties"]["icon"] = url
-            write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
+        #grandmaster modifiers
+        print("  Getting gm modifiers...")
+        for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
+            modifier_data = get_manifest_data("ActivityModifier", modifier_hash)
+            ignored_modifiers = [ #irrelevant and/or incorrect modifiers
+                "Double Nightfall Drops",
+                "Increased Vanguard Rank",
+                "Shielded Foes",
+                "Chaff",
+                "Randomized Banes"
+            ]
+            if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
+                #make sure icon url is the larger icon
+                # width = 0
+                # for item in modifier_data["displayProperties"]["iconSequences"]:
+                #     for url in item["frames"]:
+                #         image_data = requests.get(IMG_ROOT + url).content
+                #         image = Image.open(io.BytesIO(image_data))
+                #         if image.width > width:
+                #             width = image.width
+                #             modifier_data["displayProperties"]["icon"] = url
+                write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
+    else:
+        #gm not found
+        write_data_file({}, GM_FILE)
+        write_data_file({}, DESTINATION_FILE)
+        write_data_file({}, os.path.join(MODIFIERS_FOLDER, "0.json"))
 
     #nightfall weapon
     print("  Getting gm weapon...")
