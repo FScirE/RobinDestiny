@@ -55,8 +55,9 @@ component_types = {
     "Characters": 200,
     #for equippead weapon (future effective mag)
     "CharacterEquipment": 205,
+    "ItemInstances": 300,
     "ItemPerks": 302,
-    "itemStats": 304,
+    "ItemStats": 304,
     #for vendors
     "Vendors": 400,
     "VendorCategories": 401,
@@ -65,7 +66,8 @@ component_types = {
 hashes = {
     "Nightfall": "2029743966",
     "FocusedDecoding": "2232145065",
-    "Eververse": "3361454721"
+    "Eververse": "3361454721",
+    "Xur": "2190858386"
 }
 classes = {
     671679327 : "Hunter",
@@ -243,7 +245,7 @@ def setup_destiny_data():
 
     #nightfall weapon
     print("  Getting gm weapon...")
-    focusing_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/Vendors/2232145065/" +
+    focusing_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/Vendors/{hashes['FocusedDecoding']}/" +
                                 f"?components={component_types['VendorCategories']}," +
                                 f"{component_types['VendorSales']}", access_token)
     categories = focusing_data["categories"]["data"]["categories"]

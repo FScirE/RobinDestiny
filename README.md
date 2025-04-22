@@ -2,8 +2,8 @@
 ### A discord.py bot connected to the Bungie.Net API
 
 ## Features:
-- Getting specific player information about their characters and platform
-- Getting weekly grandmaster nightfall information
+- Getting specific player information about their characters and platforms
+- Getting weekly grandmaster nightfall information as well as weekly nightfall weapon
 - Getting all weekly bright dust items from eververse
 
 ## .env file keys required
