@@ -256,7 +256,7 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
             inline=True
         )
         dropdown.add_option(
-            label=formatted_name,
+            label=f"{i}: {formatted_name}",
             value=f"{user_name};{formatted_tag};{first_platform}"
         )
         i += 1

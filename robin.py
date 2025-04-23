@@ -139,7 +139,7 @@ async def robin(context: discord.Interaction):
         .set_thumbnail(url=client.user.avatar.url)
         .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
-        .add_field(name="/lookup [name] ([tag])", value="Find a Destiny account and its characters", inline=False)
+        .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
     )
 
 if __name__ == "__main__":
