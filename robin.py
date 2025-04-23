@@ -34,7 +34,7 @@ Responds with embeds and view from eververse creator and sets callbacks for butt
 async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
     embeds, view = get_eververse_data_embeds(arg)
     for button in view.children:
-        button.callback = button_callback
+        button.callback = action_callback
     if first:
         await context.response.send_message(embeds=embeds, view=view)
     else:
@@ -45,7 +45,7 @@ Handles lookup response after account data and embed has been gathered
 """
 async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: discord.ui.View, type: int, id: str):
     for button in view.children:
-        button.callback = button_callback
+        button.callback = action_callback
     if first:
         await context.response.send_message(embeds=embeds_initial)
     else:
@@ -61,18 +61,21 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     if first and embed is None:
         await context.response.send_message("No users found!", ephemeral=True)
     else:
-        for button in view.children:
-            button.callback = button_callback
+        for action in view.children:
+            action.callback = action_callback
         if first:
             await context.response.send_message(embed=embed, view=view)
         else:
             await context.response.edit_message(embed=embed, view=view)
 
 #--------------------------------------------------------------------------
-async def button_callback(context: discord.Interaction):
+async def action_callback(context: discord.Interaction):
     contents = context.data["custom_id"].split("%", 1)
     if contents[0] == "lookup": #user lookup
-        splitted = contents[1].split(";")
+        if contents[1]: #from lookup response
+            splitted = contents[1].split(";")
+        else: #from search dropdown
+            splitted = context.data["values"][0].split(";")
         name = splitted[0]
         tag = splitted[1]
         type = int(splitted[2])
@@ -136,8 +139,7 @@ async def robin(context: discord.Interaction):
         .set_thumbnail(url=client.user.avatar.url)
         .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
-        .add_field(name="/lookup [name]", value="Search for Bungie accounts by name", inline=False)
-        .add_field(name="/lookup [name] [tag]", value="Look up information of a Destiny account", inline=False)
+        .add_field(name="/lookup [name] ([tag])", value="Find a Destiny account and its characters", inline=False)
     )
 
 if __name__ == "__main__":

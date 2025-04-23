@@ -169,17 +169,6 @@ Setup destiny json data
 def setup_destiny_data():
     print("Setting up destiny data...")
 
-    #check valid refresh key exist else create new one to get access key
-    if not check_refresh_token():
-        auth_key = input("  Input authorization key: ")
-        access_token = get_set_oauth(auth_key)
-    else:
-        access_token = get_set_oauth()
-    if access_token is None:
-        print("  Failed getting access token")
-        return False
-    print("  Access token acquired")
-
     m_type = get_key(".env", "MEMBERSHIP_TYPE")
     m_id = get_key(".env", "MEMBERSHIP_ID")
     ch_ids = {
@@ -192,6 +181,17 @@ def setup_destiny_data():
     if not data_outdated_incomplete():
         print("Using existing data!")
         return True
+
+    #check valid refresh key exist else create new one to get access key
+    if not check_refresh_token():
+        auth_key = input("  Input authorization key: ")
+        access_token = get_set_oauth(auth_key)
+    else:
+        access_token = get_set_oauth()
+    if access_token is None:
+        print("  Failed getting access token")
+        return False
+    print("  Access token acquired")
 
     #clear any incomplete data
     if os.path.isdir(DATA_FOLDER):

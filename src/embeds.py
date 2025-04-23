@@ -2,8 +2,8 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
-from discord import Embed, Colour, ButtonStyle
-from discord.ui import View, Button
+from discord import Embed, Colour, ButtonStyle, SelectOption
+from discord.ui import View, Button, Select
 from PIL import Image
 
 """
@@ -226,26 +226,45 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
     }
     search_data = destiny.post_request_response(f"/User/Search/GlobalName/{page}/", payload)
     has_more = search_data["hasMore"]
-    results = search_data["searchResults"][:25] #avoid overfill
+    results = [s for s in search_data["searchResults"] if s["destinyMemberships"]][:25] #avoid overfill
     if not results:
         return None, None
+
+    #for exact lookup
+    dropdown = Select(
+        placeholder="Exact user lookup",
+        custom_id="lookup%"
+    )
 
     #build embed
     embed = Embed(
         title=f"Search results for: {name}"
     )
+    i = 0
     for user in results:
         user_name = user["bungieGlobalDisplayName"]
         user_tag = user["bungieGlobalDisplayNameCode"]
+        #translate platforms
         platforms = [destiny.platforms[m["membershipType"]] for m in user["destinyMemberships"]]
+        #values reused for dropdown
+        formatted_tag = str(user_tag).zfill(4)
+        formatted_name = f"{user_name}#{formatted_tag}"
+        first_platform = str(user["destinyMemberships"][0]["membershipType"])
         embed.add_field(
-            name=f"{user_name}#{str(user_tag).zfill(4)}",
+            name=f"{i}: {formatted_name}",
             value=f"{', '.join(platforms)}",
-            inline=True)
+            inline=True
+        )
+        dropdown.add_option(
+            label=formatted_name,
+            value=f"{user_name};{formatted_tag};{first_platform}"
+        )
+        i += 1
     embed.set_footer(text=f"Page: {page + 1}")
 
     #build view
     view = View(timeout=None)
+    view.add_item(dropdown)
     if page > 0:
         view.add_item(
             Button(

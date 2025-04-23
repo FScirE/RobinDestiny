@@ -4,8 +4,9 @@
 ## Features:
 - Finding players by Bungie name
 - Getting specific player information about their characters and platforms
-- Getting weekly grandmaster nightfall information as well as weekly nightfall weapon
-- Getting all weekly bright dust items from Eververse
+- Seeing weekly grandmaster nightfall information
+- Getting weekly adept nightfall weapon
+- Browsing all weekly bright dust items from Eververse
 
 ## .env file keys required
 ### API keys
