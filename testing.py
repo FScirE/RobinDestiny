@@ -25,4 +25,11 @@ print("start")
 # }
 # data = destiny.post_request_response("/User/Search/GlobalName/0/", payload)
 
+# token = destiny.get_set_oauth()
+# m_type = get_key(".env", "MEMBERSHIP_TYPE")
+# m_id = get_key(".env", "MEMBERSHIP_ID")
+# ch_id = get_key(".env", "HUNTER_ID")
+# data = destiny.get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/" +
+#                                 f"?components={destiny.component_types['CharacterActivities']}", token)
+
 print("end")

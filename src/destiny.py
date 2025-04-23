@@ -50,21 +50,19 @@ platforms = {
     6: "Epic Games"
 }
 component_types = {
-    #for profile and character
     "Profiles": 100,
     "Characters": 200,
-    #for equippead weapon (future effective mag)
+    "CharacterActivities": 204,
     "CharacterEquipment": 205,
     "ItemInstances": 300,
     "ItemPerks": 302,
     "ItemStats": 304,
-    #for vendors
     "Vendors": 400,
     "VendorCategories": 401,
     "VendorSales": 402
 }
 hashes = {
-    "Nightfall": "2029743966",
+    #"Nightfall": "2029743966",
     "FocusedDecoding": "2232145065",
     "Eververse": "3361454721",
     "Xur": "2190858386"
@@ -208,16 +206,26 @@ def setup_destiny_data():
 
     #grandmaster.json
     print("  Getting grandmaster...")
-    if hashes["Nightfall"] in milestones_data:
-        #if gm exists
-        activities = milestones_data[hashes["Nightfall"]]["activities"]
-        for activity in activities:
-            nightfall_hash = activity["activityHash"]
-            nightfall_data = get_manifest_data("Activity", nightfall_hash)
-            if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
-                break
-        write_data_file(nightfall_data, GM_FILE)
-
+    character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/" +
+                                f"?components={component_types['CharacterActivities']}", access_token)
+    activities = character_data["activities"]["data"]["availableActivities"]
+    found = False
+    for activity in activities:
+        if "modifierHashes" not in activity or len(activity["modifierHashes"]) <= 11: #speed up search
+            continue
+        nightfall_hash = activity["activityHash"]
+        nightfall_data = get_manifest_data("Activity", nightfall_hash)
+        if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
+            found = True
+            print("    Found!")
+            write_data_file(nightfall_data, GM_FILE)
+            break
+    if not found: #gm not found
+        print("    Not found.")
+        write_data_file({}, GM_FILE)
+        write_data_file({}, MILESTONES_FILE)
+        os.mkdir(MODIFIERS_FOLDER)
+    else:
         #gmdestination.json
         print("  Getting gm destination...")
         destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
@@ -245,11 +253,6 @@ def setup_destiny_data():
                 #             width = image.width
                 #             modifier_data["displayProperties"]["icon"] = url
                 write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
-    else:
-        #gm not found
-        write_data_file({}, GM_FILE)
-        write_data_file({}, DESTINATION_FILE)
-        write_data_file({}, os.path.join(MODIFIERS_FOLDER, "0.json"))
 
     #nightfall weapon
     print("  Getting gm weapon...")

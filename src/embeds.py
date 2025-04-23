@@ -59,6 +59,8 @@ def get_gm_data_embeds() -> list[Embed]:
         #modifier embeds
         modifiers = surges + [overcharge] + [threat] + other
         for modifier in modifiers:
+            if not modifier:
+                continue
             modifier_name = modifier["displayProperties"]["name"]
             desc_raw = modifier["displayProperties"]["description"]
             modifier_url = destiny.IMG_ROOT + modifier["displayProperties"]["iconSequences"][0]["frames"][0]
