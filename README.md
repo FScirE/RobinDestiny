@@ -6,6 +6,7 @@
 - Getting specific player information about their characters and platforms
 - Seeing weekly grandmaster nightfall information
 - Getting weekly adept nightfall weapon
+- Seeing the weekly pinnacle raids and dungeons
 - Browsing all weekly bright dust items from Eververse
 
 ## .env file keys required

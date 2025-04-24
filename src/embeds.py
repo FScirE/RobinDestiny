@@ -16,7 +16,6 @@ def get_gm_data_embeds() -> list[Embed]:
     gm_data = destiny.read_data_file(destiny.GM_FILE)
     if gm_data:
         gm_name = gm_data["displayProperties"]["description"]
-        gm_icon_url = destiny.IMG_ROOT + gm_data["displayProperties"]["icon"]
         gm_bg_url = destiny.IMG_ROOT + gm_data["pgcrImage"]
 
         #data from gmdestination.json
@@ -52,7 +51,7 @@ def get_gm_data_embeds() -> list[Embed]:
                 title=gm_name,
                 description=f"{dest_name}\n{dest_description}"
             )
-            .set_author(name="Nightfall: Grandmaster", icon_url=gm_icon_url)
+            .set_author(name="Nightfall: Grandmaster", icon_url=destiny.NIGHTFALL_URL)
             .set_image(url=gm_bg_url)
         )
 
@@ -94,10 +93,48 @@ def get_gm_data_embeds() -> list[Embed]:
             title=weapon_name,
             description=weapon_description
         )
-        .set_author(name="Weekly nightfall weapon")
+        .set_author(name="Weekly Nightfall Weapon")
         .set_thumbnail(url=weapon_url)
     )
+    return embeds
 
+"""
+Gets formatted embed with all pinnacle raids and dungeons
+"""
+def get_pinnacle_data_embeds() -> list[Embed]:
+    #separate into raids and dungeons
+    raids = []
+    dungeons = []
+    directory = os.listdir(destiny.RAID_DUNGEON_FOLDER)
+    for filename in directory:
+        file_data = destiny.read_data_file(os.path.join(destiny.RAID_DUNGEON_FOLDER, filename))
+        if str(file_data["activityTypeHash"]) == destiny.hashes["Raid"]:
+            raids.append(file_data)
+        else:
+            dungeons.append(file_data)
+    #add each raid and dungeon embed
+    embeds = []
+    embeds.append(
+        Embed().set_author(name="Weekly Pinnacle Raids and Dungeons")
+    )
+    activities = raids + dungeons
+    for activity in activities:
+        name = activity["originalDisplayProperties"]["name"]
+        description = activity["originalDisplayProperties"]["description"]
+        destination = activity["destinationName"]
+        bg_url = destiny.IMG_ROOT + activity["pgcrImage"]
+        #raid or dungeon
+        activity_type = "Raid" if str(activity["activityTypeHash"]) == destiny.hashes["Raid"] else "Dungeon"
+        activity_url = destiny.RAID_URL if str(activity["activityTypeHash"]) == destiny.hashes["Raid"] else destiny.DUNGEON_URL
+        embeds.append(
+            Embed(
+                title=name,
+                description=description
+            )
+            .set_author(name=activity_type, icon_url=activity_url)
+            .set_image(url=bg_url)
+            .set_footer(text=destination)
+        )
     return embeds
 
 """
@@ -132,7 +169,7 @@ def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed
     embeds.append(
         Embed(
             title=f"{name}#{str(tag).zfill(4)}",
-            description="Display name: " + display_name)
+            description="Display Name: " + display_name)
         .set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
     )
     embeds.append(
@@ -238,7 +275,7 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
 
     #build embed
     embed = Embed(
-        title=f"Search results for: {name}"
+        title=f"Search Results For: {name}"
     )
     i = 0
     for user in results:

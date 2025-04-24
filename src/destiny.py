@@ -24,6 +24,7 @@ MODIFIERS_FOLDER = os.path.join(DATA_FOLDER, "gm_modifiers")
 GM_WEAPON_FILE = os.path.join(DATA_FOLDER, "gmweapon.json")
 OAUTH_FILE = "./oauth.json"
 EVERVERSE_FOLDER = os.path.join(DATA_FOLDER, "eververse")
+RAID_DUNGEON_FOLDER = os.path.join(DATA_FOLDER, "raid_dungeon")
 
 BRIGHT_DUST_URL = IMG_ROOT + "/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
 KINETIC_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_3385a924fd3ccb92c343ade19f19a370.png"
@@ -32,6 +33,10 @@ SOLAR_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefiniti
 VOID_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_ceb2f6197dccf3958bb31cc783eb97a0.png"
 STASIS_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_530c4c3e7981dc2aefd24fd3293482bf.png"
 STRAND_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_b2fe51a94f3533f97079dfa0d27a4096.png"
+
+NIGHTFALL_URL = IMG_ROOT + "/common/destiny2_content/icons/3642cf9e2acd174dcab5b5f9e3a3a45d.png"
+RAID_URL = IMG_ROOT + "/common/destiny2_content/icons/bd7a1fc995f87be96698263bc16698e7.png"
+DUNGEON_URL = IMG_ROOT + "/common/destiny2_content/icons/b5c87175a97d1333da0ff4300fb87f57.png"
 
 elements = {
     1: ("Kinetic", KINETIC_URL),
@@ -65,7 +70,9 @@ hashes = {
     #"Nightfall": "2029743966",
     "FocusedDecoding": "2232145065",
     "Eververse": "3361454721",
-    "Xur": "2190858386"
+    "Xur": "2190858386",
+    "Dungeon": "608898761",
+    "Raid": "2043403989"
 }
 classes = {
     671679327 : "Hunter",
@@ -151,7 +158,8 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         not os.path.isfile(GM_FILE) or
         not os.path.isfile(DESTINATION_FILE) or
         not os.path.isfile(GM_WEAPON_FILE) or
-        not os.path.isdir(EVERVERSE_FOLDER)):
+        not os.path.isdir(EVERVERSE_FOLDER) or
+        not os.path.isdir(RAID_DUNGEON_FOLDER)):
         print("Data is incomplete")
         return True
     milestone_data = read_data_file(MILESTONES_FILE)
@@ -206,7 +214,7 @@ def setup_destiny_data():
 
     #grandmaster.json
     print("  Getting grandmaster...")
-    character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/" +
+    character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
                                 f"?components={component_types['CharacterActivities']}", access_token)
     activities = character_data["activities"]["data"]["availableActivities"]
     found = False
@@ -253,6 +261,23 @@ def setup_destiny_data():
                 #             width = image.width
                 #             modifier_data["displayProperties"]["icon"] = url
                 write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
+
+    #raids and dungeons
+    print("  Getting raids and dungeons...")
+    for activity in activities:
+        if "challenges" not in activity: #this fails if you have completed the pinnacle already
+            continue
+        activity_hash = activity["activityHash"]
+        activity_data = get_manifest_data("Activity", activity_hash)
+        activity_type_hash = activity_data["activityTypeHash"]
+        if str(activity_type_hash) in [hashes["Raid"], hashes["Dungeon"]]:
+            if (("selectionScreenDisplayProperties" in activity_data and activity_data["selectionScreenDisplayProperties"]["name"] != "Master") or
+                "selectionScreenDisplayProperties" not in activity_data):
+                #get destination info and add into activity data
+                destination_data = get_manifest_data("Destination", activity_data["destinationHash"])
+                destination_name = destination_data["displayProperties"]["name"]
+                activity_data["destinationName"] = destination_name
+                write_data_file(activity_data, os.path.join(RAID_DUNGEON_FOLDER, f"{activity_hash}.json"))
 
     #nightfall weapon
     print("  Getting gm weapon...")

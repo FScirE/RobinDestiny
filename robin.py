@@ -7,7 +7,8 @@ from src.embeds import (
     get_character_data_embeds,
     get_search_embed,
     get_gm_data_embeds,
-    get_eververse_data_embeds
+    get_eververse_data_embeds,
+    get_pinnacle_data_embeds
 )
 import discord
 
@@ -110,6 +111,15 @@ async def gm(context: discord.Interaction):
 
 #--------------------------------------------------------------------------
 @tree.command(
+    name="pinnacle",
+    description="Get all weekly pinnacle raids and dungeons"
+)
+async def pinnacle(context: discord.Interaction):
+    embeds = get_pinnacle_data_embeds()
+    await context.response.send_message(embeds=embeds)
+
+#--------------------------------------------------------------------------
+@tree.command(
     name="lookup",
     description="Search for and get information about a Destiny account"
 )
@@ -138,6 +148,7 @@ async def robin(context: discord.Interaction):
         )
         .set_thumbnail(url=client.user.avatar.url)
         .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
+        .add_field(name="/pinnacle", value="See the weekly pinnacle raids and dungeons", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
     )

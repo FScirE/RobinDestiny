@@ -32,4 +32,15 @@ print("start")
 # data = destiny.get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/" +
 #                                 f"?components={destiny.component_types['CharacterActivities']}", token)
 
+# for activity in data["activities"]["data"]["availableActivities"]:
+#     if "challenges" not in activity:
+#         continue
+#     manifest_data = destiny.get_manifest_data("Activity", activity["activityHash"])
+#     if (
+#         str(manifest_data["activityTypeHash"]) in [destiny.hashes["Raid"], destiny.hashes["Dungeon"]] and
+#         "selectionScreenDisplayProperties" in manifest_data and
+#         manifest_data["selectionScreenDisplayProperties"]["name"] != "Master"
+#         ):
+#         destiny.write_data_file(manifest_data, f"data/test/{activity['activityHash']}.json")
+
 print("end")
