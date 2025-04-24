@@ -8,7 +8,8 @@ from src.embeds import (
     get_search_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
-    get_pinnacle_data_embeds
+    get_pinnacle_data_embeds,
+    get_patches_data_embed
 )
 import discord
 
@@ -139,6 +140,15 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
 
 #--------------------------------------------------------------------------
 @tree.command(
+    name="patches",
+    description="See the past few Destiny 2 patch notes"
+)
+async def patches(context: discord.Interaction):
+    embed = get_patches_data_embed()
+    await context.response.send_message(embed=embed)
+
+#--------------------------------------------------------------------------
+@tree.command(
     name="robin",
     description=f"See all the things you can do with Robin D. Estiny"
 )
@@ -151,6 +161,7 @@ async def robin(context: discord.Interaction):
         .add_field(name="/pinnacle", value="See the weekly pinnacle raids and dungeons", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
+        .add_field(name="/patches", value="Get the most recent Destiny 2 patch notes", inline=False)
     )
 
 if __name__ == "__main__":

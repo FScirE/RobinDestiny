@@ -9,6 +9,7 @@ import src.destiny as destiny
 import src.embeds as embeds
 import base64
 import re
+from datetime import datetime
 
 print("start")
 # destiny.setup_destiny_data()
@@ -42,5 +43,14 @@ print("start")
 #         manifest_data["selectionScreenDisplayProperties"]["name"] != "Master"
 #         ):
 #         destiny.write_data_file(manifest_data, f"data/test/{activity['activityHash']}.json")
+
+# data = destiny.get_request_response("/Content/Rss/NewsArticles/0/?categoryfilter=updates")
+
+# for article in data["NewsArticles"]:
+#     title = article["Title"]
+#     link = article["Link"]
+#     description = article["Description"]
+#     date = datetime.fromisoformat(article["PubDate"].replace("Z", "+00:00")).date()
+#     print(f"{date}")
 
 print("end")

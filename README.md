@@ -8,6 +8,7 @@
 - Getting weekly adept nightfall weapon
 - Seeing the weekly pinnacle raids and dungeons
 - Browsing all weekly bright dust items from Eververse
+- Getting the most recent patch notes
 
 ## .env file keys required
 ### API keys

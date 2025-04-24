@@ -397,7 +397,35 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
     return embeds, view
 
 """
-Formats a datetime object for pretty printing
+Get embed for the past (default)5 patch notes
+"""
+def get_patches_data_embed(num_patches: int = 5):
+    #get rss news articles filtered for patch notes
+    patches_data = destiny.get_request_response("/Content/Rss/NewsArticles/0/?categoryfilter=updates")
+
+    #create embed
+    embed = Embed(
+        title=f"Most Recent Destiny 2 Patch Notes",
+        color=Colour.from_rgb(210, 119, 48)
+    )
+    image_url = patches_data["NewsArticles"][0]["ImagePath"]
+    embed.set_image(url=image_url)
+
+    #add articles to embed
+    for article in patches_data["NewsArticles"][:num_patches]:
+        title = article["Title"]
+        link = destiny.IMG_ROOT + article["Link"]
+        description = article["Description"]
+        date = datetime.fromisoformat(article["PubDate"].replace("Z", "+00:00")).date()
+        embed.add_field(
+            name=f"{title}",
+            value=f"{description}\n{date}: [Link to article]({link})",
+            inline=False
+        )
+    return embed
+
+"""
+Formats a timedelta object for pretty printing
 """
 def format_timedelta(time: timedelta) -> str:
     days = time.days
