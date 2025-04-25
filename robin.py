@@ -30,10 +30,10 @@ async def on_ready():
     print("Robin D. Estiny: Running!")
 
 #helper functions ---------------------------------------------------------
-"""
-Responds with embeds and view from eververse creator and sets callbacks for buttons
-"""
 async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
+    """
+    Responds with embeds and view from eververse creator and sets callbacks for buttons
+    """
     embeds, view = get_eververse_data_embeds(arg)
     for button in view.children:
         button.callback = action_callback
@@ -42,10 +42,10 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     else:
         await context.response.edit_message(embeds=embeds, view=view)
 
-"""
-Handles lookup response after account data and embed has been gathered
-"""
 async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: discord.ui.View, type: int, id: str):
+    """
+    Handles lookup response after account data and embed has been gathered
+    """
     for button in view.children:
         button.callback = action_callback
     if first:
@@ -55,10 +55,10 @@ async def handle_character_lookup(first: bool, context: discord.Interaction, emb
     embeds_full = get_character_data_embeds(embeds_initial, type, id)
     await context.edit_original_response(embeds=embeds_full, view=view)
 
-"""
-Handles the page scrolling etc of the user search
-"""
 async def handle_search(first: bool, context: discord.Interaction, name: str, page: int = 0):
+    """
+    Handles the page scrolling etc of the user search
+    """
     embed, view = get_search_embed(name, page)
     if first and embed is None:
         await context.response.send_message("No users found!", ephemeral=True)

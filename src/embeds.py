@@ -6,10 +6,10 @@ from discord import Embed, Colour, ButtonStyle, SelectOption
 from discord.ui import View, Button, Select
 from PIL import Image
 
-"""
-Gets formatted embeds with grandmaster nightfall data
-"""
 def get_gm_data_embeds() -> list[Embed]:
+    """
+    Gets formatted embeds with grandmaster nightfall data
+    """
     embeds = []
 
     #data from grandmaster.json
@@ -98,10 +98,10 @@ def get_gm_data_embeds() -> list[Embed]:
     )
     return embeds
 
-"""
-Gets formatted embed with all pinnacle raids and dungeons
-"""
 def get_pinnacle_data_embeds() -> list[Embed]:
+    """
+    Gets formatted embeds with all pinnacle raids and dungeons
+    """
     #separate into raids and dungeons
     raids = []
     dungeons = []
@@ -137,11 +137,12 @@ def get_pinnacle_data_embeds() -> list[Embed]:
         )
     return embeds
 
-"""
-Gets formatted embed with account data from name and tag
-Also returns membership type and id
-"""
+
 def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed, View, int, str]:
+    """
+    Gets formatted embed with account data from name and tag
+    Also returns membership type and id
+    """
     #get account data
     account_data = destiny.get_account_data(name, tag)
     if not account_data:
@@ -190,10 +191,10 @@ def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed
         ))
     return embeds, view, membership_type, membership_id
 
-"""
-Gets formatted embeds for character data for an account
-"""
 def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[Embed]:
+    """
+    Gets formatted embeds for character data for an account
+    """
     embeds = [initial[0]]
 
     #get characters data
@@ -253,10 +254,10 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
-"""
-Gets embed for a page of user search results
-"""
 def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
+    """
+    Gets embed for a page of user search results
+    """
     #get search results
     payload = {
         "displayNamePrefix": name
@@ -320,10 +321,10 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
         )
     return embed, view
 
-"""
-Gets embed for a selected category in eververse
-"""
 def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
+    """
+    Gets embeds for a selected category in eververse
+    """
     embeds = []
     view = View(timeout=None)
 
@@ -396,10 +397,10 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
         ))
     return embeds, view
 
-"""
-Get embed for the past (default)5 patch notes
-"""
 def get_patches_data_embed(num_patches: int = 5):
+    """
+    Get embed for the past (default)5 patch notes
+    """
     #get rss news articles filtered for patch notes
     patches_data = destiny.get_request_response("/Content/Rss/NewsArticles/0/?categoryfilter=updates")
 
@@ -424,10 +425,10 @@ def get_patches_data_embed(num_patches: int = 5):
         )
     return embed
 
-"""
-Formats a timedelta object for pretty printing
-"""
 def format_timedelta(time: timedelta) -> str:
+    """
+    Formats a timedelta object for pretty printing
+    """
     days = time.days
     hours = time.seconds // 3600
     minutes = (time.seconds % 3600) // 60

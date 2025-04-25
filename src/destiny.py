@@ -80,36 +80,36 @@ classes = {
     3655393761 : "Titan"
 }
 
-"""
-Get response from GET request to bungie API
-"""
 def get_request_response(path):
+    """
+    Get response from GET request to bungie API
+    """
     data = requests.get(ROOT + path, headers=HEADER)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
 
-"""
-Get response from POST request to bungie API
-"""
 def post_request_response(path, payload):
+    """
+    Get response from POST request to bungie API
+    """
     data = requests.post(ROOT + path, json=payload, headers=HEADER)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
 
-"""
-Write json data to file
-"""
 def write_data_file(data, filepath):
+    """
+    Write json data to file
+    """
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, "w") as file:
         json.dump(data, file, indent=4)
 
-"""
-Read data from json file
-"""
 def read_data_file(filepath):
+    """
+    Read data from json file
+    """
     try:
         with open(filepath, "r") as file:
             data = json.load(file)
@@ -118,27 +118,28 @@ def read_data_file(filepath):
     else:
         return data
 
-"""
-Gets data from manifest
-"""
 def get_manifest_data(entry, hash):
+    """
+    Gets data from manifest
+    """
     data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
     return data
 
-"""
-Get response from GET request with OAuth requirement with access key and components
-"""
 def get_request_response_oauth(path, access_token):
+    """
+    Get response from GET request with OAuth requirement with access key and components
+    """
     header = {**HEADER, **{"Authorization": "Bearer " + access_token}}
     data = requests.get(ROOT + path, headers=header)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
 
-"""
-Checks if refresh token exists or if outdated
-"""
+
 def check_refresh_token():
+    """
+    Checks if refresh token exists or if outdated
+    """
     if not os.path.isfile(OAUTH_FILE):
         return False
     data = read_data_file(OAUTH_FILE)
@@ -147,11 +148,11 @@ def check_refresh_token():
         return False
     return True
 
-"""
-Checks if all data exists and reads end date of grandmaster
-entry (could be any) in milestones to see if data needs updating
-"""
 def data_outdated_incomplete(): #check if any folder or file is missing
+    """
+    Checks if all data exists and reads end date of first
+    entry in milestones to see if data needs updating
+    """
     if (not os.path.isdir(DATA_FOLDER) or
         not os.path.isdir(MODIFIERS_FOLDER) or
         not os.path.isfile(MILESTONES_FILE) or
@@ -171,10 +172,11 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         return True
     return False
 
-"""
-Setup destiny json data
-"""
+
 def setup_destiny_data():
+    """
+    Setup weekly Destiny json data
+    """
     print("Setting up destiny data...")
 
     m_type = get_key(".env", "MEMBERSHIP_TYPE")
@@ -324,10 +326,10 @@ def setup_destiny_data():
     print("Done!")
     return True
 
-"""
-Gets account data from name and tag
-"""
 def get_account_data(name, tag):
+    """
+    Gets account data from name and tag
+    """
     info = {
         "displayName": name,
         "displayNameCode": tag
@@ -335,12 +337,12 @@ def get_account_data(name, tag):
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
 
-"""
-Gets OAuth access token given an authentication code, or using refresh token,
-and saves refresh token to file
-(psa: authentication code is one time use)
-"""
 def get_set_oauth(code = None):
+    """
+    Gets OAuth access token given an authentication code, or using refresh token,
+    and saves refresh token to file
+    (psa: authentication code is one time use)
+    """
     url = "https://www.bungie.net/platform/app/oauth/token/"
     id = get_key(".env", "CLIENT_ID")
     secret = get_key(".env", "CLIENT_SECRET")
