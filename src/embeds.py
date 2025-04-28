@@ -2,9 +2,24 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
-from discord import Embed, Colour, ButtonStyle, SelectOption
+from discord import Embed, Colour, ButtonStyle, Interaction
 from discord.ui import View, Button, Select
 from PIL import Image
+
+class OwnedView(View):
+    """
+    View with stored owner
+    """
+    def __init__(self, owner_id):
+        self.owner_id = owner_id
+        super().__init__()
+
+    #overwrite interaction check
+    async def interaction_check(self, context: Interaction) -> bool:
+        if self.owner_id == context.user.id:
+            return True
+        await context.response.send_message("You can't interact with this message!", ephemeral=True)
+        return False
 
 def get_gm_data_embeds() -> list[Embed]:
     """
@@ -137,10 +152,9 @@ def get_pinnacle_data_embeds() -> list[Embed]:
         )
     return embeds
 
-
-def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed, View, int, str]:
+def get_account_data_embeds_lookup(context: Interaction, name: str, tag: int, type: int = None) -> tuple[list[Embed], OwnedView, int, str]:
     """
-    Gets formatted embed with account data from name and tag
+    Gets formatted embeds with account data from name and tag for lookup command
     Also returns membership type and id
     """
     #get account data
@@ -170,7 +184,8 @@ def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed
     embeds.append(
         Embed(
             title=f"{name}#{str(tag).zfill(4)}",
-            description="Display Name: " + display_name)
+            description="Display Name: " + display_name
+        )
         .set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
     )
     embeds.append(
@@ -178,17 +193,20 @@ def get_account_data_embed(name: str, tag: int, type: int = None) -> tuple[Embed
     )
 
     #create buttons view for each profile type
-    view = View(timeout=None)
+    view = OwnedView(context.user.id)
+    view.timeout = None
     for item in membership_types:
         if item == membership_type:
             button_style = ButtonStyle.primary
         else:
             button_style = ButtonStyle.secondary
-        view.add_item(Button(
-            style=button_style,
-            label=destiny.platforms[item],
-            custom_id=f"lookup%{name};{tag};{item}"
-        ))
+        view.add_item(
+            Button(
+                style=button_style,
+                label=destiny.platforms[item],
+                custom_id=f"lookup%{name};{tag};{item}"
+            )
+        )
     return embeds, view, membership_type, membership_id
 
 def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[Embed]:
@@ -198,12 +216,9 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
     embeds = [initial[0]]
 
     #get characters data
-    response = destiny.get_request_response(f"/Destiny2/{type}/" +
-                                            f"Profile/{id}/" +
-                                            f"?components={destiny.component_types['Characters']}")
-    if not response:
+    characters_data = destiny.get_characters_data(type, id)
+    if not characters_data:
         return embeds + [Embed(title="No characters found!")]
-    characters_data = response["characters"]["data"]
 
     #sort after playtime
     sorted_characters_data = sorted(
@@ -254,7 +269,7 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
-def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
+def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
     """
     Gets embed for a page of user search results
     """
@@ -301,7 +316,8 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
     embed.set_footer(text=f"Page: {page + 1}")
 
     #build view
-    view = View(timeout=None)
+    view = OwnedView(context.user.id)
+    view.timeout = None
     view.add_item(dropdown)
     if page > 0:
         view.add_item(
@@ -321,12 +337,13 @@ def get_search_embed(name: str, page: int) -> tuple[Embed, View]:
         )
     return embed, view
 
-def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
+def get_eververse_data_embeds(context: Interaction, category: str) -> tuple[list[Embed], OwnedView]:
     """
     Gets embeds for a selected category in eververse
     """
     embeds = []
-    view = View(timeout=None)
+    view = OwnedView(context.user.id)
+    view.timeout = None
 
     #all available types of cosmetics
     available_categories = []
@@ -356,13 +373,8 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
             item_image = None
 
         #rarity color
-        rarity = item_data["inventory"]["tierTypeName"]
-        if rarity == "Exotic":
-            item_colour = Colour.from_rgb(205, 173, 54)
-        elif rarity == "Legendary":
-            item_colour = Colour.from_rgb(79, 54, 99)
-        else:
-            item_colour = Colour.from_rgb(86, 126, 157)
+        r, g, b = destiny.get_rarity_color(item_data)
+        item_colour = Colour.from_rgb(r, g, b)
 
         #create embed
         embed = Embed(
@@ -397,7 +409,7 @@ def get_eververse_data_embeds(category: str) -> tuple[list[Embed], View]:
         ))
     return embeds, view
 
-def get_patches_data_embed(num_patches: int = 5):
+def get_patches_data_embed(num_patches: int = 5) -> Embed:
     """
     Get embed for the past (default)5 patch notes
     """
@@ -424,6 +436,100 @@ def get_patches_data_embed(num_patches: int = 5):
             inline=False
         )
     return embed
+
+def get_account_data_embeds_weapons(name: str, tag: int) -> tuple[list[Embed], object]:
+    """
+    Gets formatted embeds with account data from name and tag for top weapons command
+    Also returns account object
+    """
+    #get account data
+    account_data = destiny.get_account_data(name, tag)
+    if not account_data:
+        return None, None
+
+    #keep track of which display names and platforms account has
+    display_names = [m["displayName"] for m in account_data]
+    platforms = [destiny.platforms[m["membershipType"]] for m in account_data]
+
+    #create embed
+    embeds = []
+    embeds.append(
+        Embed(
+            title=f"{name}#{str(tag).zfill(4)}"
+        )
+        .add_field(name="Display Names", value=", ".join(display_names), inline=False)
+        .add_field(name="Platforms", value=", ".join(platforms), inline=False)
+    )
+    embeds.append(
+        Embed(description="Loading top exotics...")
+    )
+    return embeds, account_data
+
+def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int = 3) -> list[Embed]:
+    """
+    Gets embed displaying the top 3 highest kill exotics for an account
+    """
+    embeds = [initial[0]]
+    weapon_counts = {}
+
+    #iterate through each character of each membership
+    for account in accounts_data:
+        membership_type = account["membershipType"]
+        membership_id = account["membershipId"]
+        response = destiny.get_characters_data(membership_type, membership_id)
+        if not response:
+            continue
+        character_ids = list(response)
+        for character_id in character_ids:
+            stats = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/UniqueWeapons/")
+            if "weapons" not in stats:
+                continue
+            weapon_data = stats["weapons"]
+            #add kill count to tally
+            for weapon in weapon_data:
+                weapon_id = weapon["referenceId"]
+                weapon_kills = weapon["values"]["uniqueWeaponKills"]["basic"]["value"]
+                if weapon_id in weapon_counts:
+                    weapon_counts[weapon_id] += weapon_kills
+                else:
+                    weapon_counts[weapon_id] = weapon_kills
+
+    if not weapon_counts:
+        return embeds + [Embed(title="No weapon data found!")]
+
+    #sort and get the top
+    weapon_counts_list = list(weapon_counts.items())
+    weapon_counts_list.sort(key=lambda e: e[1], reverse=True)
+    top = weapon_counts_list[:amt]
+
+    #create embeds
+    pos = 1
+    for weapon in top:
+        weapon_hash = weapon[0]
+        weapon_kills = int(weapon[1])
+
+        #get weapon data
+        weapon_data = destiny.get_manifest_data("InventoryItem", weapon_hash)
+        weapon_name = weapon_data["displayProperties"]["name"]
+        weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
+        weapon_flavortext = weapon_data["flavorText"]
+        #rarity color
+        r, g, b = destiny.get_rarity_color(weapon_data)
+        rarity_colour = Colour.from_rgb(r, g, b)
+
+        #add embed
+        embeds.append(
+            Embed(
+                title=weapon_name,
+                description=weapon_flavortext,
+                color=rarity_colour
+            )
+            .set_author(name=f"#{pos}")
+            .set_thumbnail(url=weapon_url)
+            .add_field(name="Kills", value=str(weapon_kills))
+        )
+        pos += 1
+    return embeds
 
 def format_timedelta(time: timedelta) -> str:
     """

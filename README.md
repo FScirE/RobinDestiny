@@ -4,6 +4,7 @@
 ## Features:
 - Finding players by Bungie name
 - Getting specific player information about their characters and platforms
+- Getting a players most used exotic weapons
 - Seeing weekly grandmaster nightfall information
 - Getting weekly adept nightfall weapon
 - Seeing the weekly pinnacle raids and dungeons

@@ -3,13 +3,16 @@ from src.destiny import (
     setup_destiny_data,
 )
 from src.embeds import (
-    get_account_data_embed,
+    OwnedView,
+    get_account_data_embeds_lookup,
     get_character_data_embeds,
     get_search_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
     get_pinnacle_data_embeds,
-    get_patches_data_embed
+    get_patches_data_embed,
+    get_account_data_embeds_weapons,
+    get_top_weapons_embeds
 )
 import discord
 
@@ -34,7 +37,7 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     """
     Responds with embeds and view from eververse creator and sets callbacks for buttons
     """
-    embeds, view = get_eververse_data_embeds(arg)
+    embeds, view = get_eververse_data_embeds(context, arg)
     for button in view.children:
         button.callback = action_callback
     if first:
@@ -42,7 +45,7 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     else:
         await context.response.edit_message(embeds=embeds, view=view)
 
-async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: discord.ui.View, type: int, id: str):
+async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: OwnedView, type: int, id: str):
     """
     Handles lookup response after account data and embed has been gathered
     """
@@ -59,7 +62,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     """
     Handles the page scrolling etc of the user search
     """
-    embed, view = get_search_embed(name, page)
+    embed, view = get_search_embed(context, name, page)
     if first and embed is None:
         await context.response.send_message("No users found!", ephemeral=True)
     else:
@@ -81,7 +84,7 @@ async def action_callback(context: discord.Interaction):
         name = splitted[0]
         tag = splitted[1]
         type = int(splitted[2])
-        embeds_initial, view, type, id = get_account_data_embed(name, tag, type)
+        embeds_initial, view, type, id = get_account_data_embeds_lookup(context, name, tag, type)
         await handle_character_lookup(False, context, embeds_initial, view, type, id)
     elif contents[0] == "search": #user search
         splitted = contents[1].split(";")
@@ -132,11 +135,29 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     if tag is None:
         await handle_search(True, context, name)
     else:
-        embeds_initial, view, type, id = get_account_data_embed(name, str(tag))
+        embeds_initial, view, type, id = get_account_data_embeds_lookup(context, name, str(tag))
         if embeds_initial is None:
             await context.response.send_message("User was not found!", ephemeral=True)
         else:
             await handle_character_lookup(True, context, embeds_initial, view, type, id)
+
+#--------------------------------------------------------------------------
+@tree.command(
+    name="topweapons",
+    description="Get the top exotic weapons for a destiny account"
+)
+@discord.app_commands.describe(
+    name="Destiny username",
+    tag="The four digits after the '#'"
+)
+async def topweapons(context: discord.Interaction, name: str, tag: int):
+    embeds_initial, account_data = get_account_data_embeds_weapons(name, str(tag))
+    if embeds_initial is None:
+        await context.response.send_message("User was not found!", ephemeral=True)
+    else:
+        await context.response.send_message(embeds=embeds_initial)
+        embeds_full = get_top_weapons_embeds(embeds_initial, account_data)
+        await context.edit_original_response(embeds=embeds_full)
 
 #--------------------------------------------------------------------------
 @tree.command(
@@ -161,6 +182,7 @@ async def robin(context: discord.Interaction):
         .add_field(name="/pinnacle", value="See the weekly pinnacle raids and dungeons", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
+        .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)
         .add_field(name="/patches", value="Get the most recent Destiny 2 patch notes", inline=False)
     )
 

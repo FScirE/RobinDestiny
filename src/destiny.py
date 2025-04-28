@@ -337,6 +337,29 @@ def get_account_data(name, tag):
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
 
+def get_characters_data(type, id):
+    """
+    Gets the characters for a given account
+    """
+    response = get_request_response(f"/Destiny2/{type}/" +
+                                    f"Profile/{id}/" +
+                                    f"?components={component_types['Characters']}")
+    if not response:
+        return None
+    return response["characters"]["data"]
+
+def get_rarity_color(item):
+    """
+    Get the rarity color of a given InventoryItem as r,g,b
+    """
+    rarity = item["inventory"]["tierTypeName"]
+    if rarity == "Exotic":
+        return 205, 173, 54
+    elif rarity == "Legendary":
+        return 79, 54, 99
+    else: #Rare
+        return 86, 126, 157
+
 def get_set_oauth(code = None):
     """
     Gets OAuth access token given an authentication code, or using refresh token,
