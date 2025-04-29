@@ -186,6 +186,7 @@ def get_account_data_embeds_lookup(context: Interaction, name: str, tag: int, ty
             title=f"{name}#{str(tag).zfill(4)}",
             description="Display Name: " + display_name
         )
+        .set_author(name="User Lookup")
         .set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
     )
     embeds.append(
@@ -293,6 +294,7 @@ def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed,
     embed = Embed(
         title=f"Search Results For: {name}"
     )
+    embed.set_author(name="User Lookup")
     i = 0
     for user in results:
         user_name = user["bungieGlobalDisplayName"]
@@ -457,6 +459,7 @@ def get_account_data_embeds_weapons(name: str, tag: int) -> tuple[list[Embed], o
         Embed(
             title=f"{name}#{str(tag).zfill(4)}"
         )
+        .set_author(name="Top Exotic Weapons")
         .add_field(name="Display Names", value=", ".join(display_names), inline=False)
         .add_field(name="Platforms", value=", ".join(platforms), inline=False)
     )
