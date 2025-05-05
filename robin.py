@@ -1,4 +1,5 @@
 from dotenv import get_key
+import asyncio
 from src.destiny import (
     setup_destiny_data,
 )
@@ -7,6 +8,7 @@ from src.embeds import (
     get_account_data_embeds_lookup,
     get_character_data_embeds,
     get_search_embed,
+    get_search_loading_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
     get_pinnacle_data_embeds,
@@ -62,16 +64,40 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     """
     Handles the page scrolling etc of the user search
     """
+    loading_embed = get_search_loading_embed(name, page)
+    #loading to make command not time out
+    if first:
+        await context.response.send_message(embed=loading_embed, ephemeral=True)
+    else:
+        #save old message contents in case search fails
+        original_embed = context.message.embeds[0]
+        original_view = OwnedView(context.user.id)
+        for comp in discord.ui.view._walk_all_components(context.message.components):
+            original_view.add_item(discord.ui.view._component_to_item(comp))
+        await context.response.edit_message(embed=loading_embed, view=None)
+    #actual response
     embed, view = get_search_embed(context, name, page)
+    attempts = 0
+    while embed is None and attempts < 5: #search fails for some reason
+        attempts += 1
+        embed, view = get_search_embed(context, name, page)
+        await asyncio.sleep(2)
+    if not first and embed is None:
+        await context.edit_original_response(embed=original_embed, view=original_view)
+        return
+    #response found
+    hook = context.followup
     if first and embed is None:
-        await context.response.send_message("No users found!", ephemeral=True)
+        await context.delete_original_response() #delete first loading ephemeral message
+        await hook.send("No users found!", ephemeral=True)
     else:
         for action in view.children:
             action.callback = action_callback
         if first:
-            await context.response.send_message(embed=embed, view=view)
+            await context.delete_original_response() #delete first loading ephemeral message
+            await hook.send(embed=embed, view=view)
         else:
-            await context.response.edit_message(embed=embed, view=view)
+            await context.edit_original_response(embed=embed, view=view)
 
 #--------------------------------------------------------------------------
 async def action_callback(context: discord.Interaction):

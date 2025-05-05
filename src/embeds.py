@@ -270,6 +270,18 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
+def get_search_loading_embed(name: str, page: int):
+    """
+    Gets embed for loading search command
+    """
+    embed = Embed(
+        title=f"Searching For: {name}",
+        description="Searching..."
+    )
+    embed.set_author(name="User lookup")
+    embed.set_footer(text=f"Page: {page + 1}")
+    return embed
+
 def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
     """
     Gets embed for a page of user search results
@@ -279,6 +291,8 @@ def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed,
         "displayNamePrefix": name
     }
     search_data = destiny.post_request_response(f"/User/Search/GlobalName/{page}/", payload)
+    if not search_data:
+        return None, None
     has_more = search_data["hasMore"]
     results = [s for s in search_data["searchResults"] if s["destinyMemberships"]][:25] #avoid overfill
     if not results:
