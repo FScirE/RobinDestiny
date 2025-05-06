@@ -435,17 +435,18 @@ def get_patches_data_embed(num_patches: int = 5) -> Embed:
     """
     #get rss news articles filtered for patch notes
     patches_data = destiny.get_request_response("/Content/Rss/NewsArticles/0/?categoryfilter=updates")
+    articles = [a for a in patches_data["NewsArticles"] if "Destiny 2" in a["Title"]]
 
     #create embed
     embed = Embed(
         title=f"Most Recent Destiny 2 Patch Notes",
         color=Colour.from_rgb(210, 119, 48)
     )
-    image_url = patches_data["NewsArticles"][0]["ImagePath"]
+    image_url = articles[0]["ImagePath"]
     embed.set_image(url=image_url)
 
     #add articles to embed
-    for article in patches_data["NewsArticles"][:num_patches]:
+    for article in articles[:num_patches]:
         title = article["Title"]
         link = destiny.IMG_ROOT + article["Link"]
         description = article["Description"]
