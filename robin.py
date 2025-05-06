@@ -39,7 +39,8 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     """
     Responds with embeds and view from eververse creator and sets callbacks for buttons
     """
-    embeds, view = get_eververse_data_embeds(context, arg)
+    new_view = OwnedView(context.user.id)
+    embeds, view = await asyncio.to_thread(get_eververse_data_embeds, new_view, context, arg)
     for button in view.children:
         button.callback = action_callback
     if first:
@@ -57,14 +58,14 @@ async def handle_character_lookup(first: bool, context: discord.Interaction, emb
         await context.response.send_message(embeds=embeds_initial)
     else:
         await context.response.edit_message(embeds=embeds_initial, view=None)
-    embeds_full = get_character_data_embeds(embeds_initial, type, id)
+    embeds_full = await asyncio.to_thread(get_character_data_embeds, embeds_initial, type, id)
     await context.edit_original_response(embeds=embeds_full, view=view)
 
 async def handle_search(first: bool, context: discord.Interaction, name: str, page: int = 0):
     """
     Handles the page scrolling etc of the user search
     """
-    loading_embed = get_search_loading_embed(name, page)
+    loading_embed = await asyncio.to_thread(get_search_loading_embed, name, page)
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed, ephemeral=True)
@@ -76,12 +77,8 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
             original_view.add_item(discord.ui.view._component_to_item(comp))
         await context.response.edit_message(embed=loading_embed, view=None)
     #actual response
-    embed, view = get_search_embed(context, name, page)
-    attempts = 0
-    while embed is None and attempts < 5: #search fails for some reason
-        attempts += 1
-        embed, view = get_search_embed(context, name, page)
-        await asyncio.sleep(2)
+    new_view = OwnedView(context.user.id)
+    embed, view = await asyncio.to_thread(get_search_embed, new_view, context, name, page)
     if not first and embed is None:
         await context.edit_original_response(embed=original_embed, view=original_view)
         return
@@ -110,7 +107,8 @@ async def action_callback(context: discord.Interaction):
         name = splitted[0]
         tag = splitted[1]
         type = int(splitted[2])
-        embeds_initial, view, type, id = get_account_data_embeds_lookup(context, name, tag, type)
+        new_view = OwnedView(context.user.id)
+        embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, new_view, context, name, tag, type)
         await handle_character_lookup(False, context, embeds_initial, view, type, id)
     elif contents[0] == "search": #user search
         splitted = contents[1].split(";")
@@ -136,7 +134,7 @@ async def eververse(context: discord.Interaction):
     description="Get information about the current active grandmaster nightfall"
 )
 async def gm(context: discord.Interaction):
-    embeds = get_gm_data_embeds()
+    embeds = await asyncio.to_thread(get_gm_data_embeds)
     await context.response.send_message(embeds=embeds)
 
 #--------------------------------------------------------------------------
@@ -145,7 +143,7 @@ async def gm(context: discord.Interaction):
     description="Get all weekly pinnacle raids and dungeons"
 )
 async def pinnacle(context: discord.Interaction):
-    embeds = get_pinnacle_data_embeds()
+    embeds = await asyncio.to_thread(get_pinnacle_data_embeds)
     await context.response.send_message(embeds=embeds)
 
 #--------------------------------------------------------------------------
@@ -161,7 +159,8 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     if tag is None:
         await handle_search(True, context, name)
     else:
-        embeds_initial, view, type, id = get_account_data_embeds_lookup(context, name, str(tag))
+        new_view = OwnedView(context.user.id)
+        embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, context, name, str(tag))
         if embeds_initial is None:
             await context.response.send_message("User was not found!", ephemeral=True)
         else:
@@ -177,12 +176,12 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     tag="The four digits after the '#'"
 )
 async def topweapons(context: discord.Interaction, name: str, tag: int):
-    embeds_initial, account_data = get_account_data_embeds_weapons(name, str(tag))
+    embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_weapons, name, str(tag))
     if embeds_initial is None:
         await context.response.send_message("User was not found!", ephemeral=True)
     else:
         await context.response.send_message(embeds=embeds_initial)
-        embeds_full = get_top_weapons_embeds(embeds_initial, account_data)
+        embeds_full = await asyncio.to_thread(get_top_weapons_embeds, embeds_initial, account_data)
         await context.edit_original_response(embeds=embeds_full)
 
 #--------------------------------------------------------------------------
@@ -191,7 +190,7 @@ async def topweapons(context: discord.Interaction, name: str, tag: int):
     description="See the past few Destiny 2 patch notes"
 )
 async def patches(context: discord.Interaction):
-    embed = get_patches_data_embed()
+    embed = await asyncio.to_thread(get_patches_data_embed)
     await context.response.send_message(embed=embed)
 
 #--------------------------------------------------------------------------

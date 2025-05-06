@@ -2,6 +2,7 @@ import requests
 import json
 import os
 import base64
+import time
 import io
 import shutil
 from PIL import Image
@@ -80,11 +81,23 @@ classes = {
     3655393761 : "Titan"
 }
 
+def do_retry_request(request_func):
+    """
+    Performs a HTTP request and retries some times if server error
+    """
+    data = request_func()
+    atts = 0
+    while data.status_code // 100 == 5 and atts < 10:
+        data = request_func()
+        time.sleep(1 + atts)
+        atts += 1
+    return data
+
 def get_request_response(path):
     """
     Get response from GET request to bungie API
     """
-    data = requests.get(ROOT + path, headers=HEADER)
+    data = do_retry_request(lambda: requests.get(ROOT + path, headers=HEADER))
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -93,7 +106,7 @@ def post_request_response(path, payload):
     """
     Get response from POST request to bungie API
     """
-    data = requests.post(ROOT + path, json=payload, headers=HEADER)
+    data = do_retry_request(lambda: requests.post(ROOT + path, json=payload, headers=HEADER))
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -130,7 +143,7 @@ def get_request_response_oauth(path, access_token):
     Get response from GET request with OAuth requirement with access key and components
     """
     header = {**HEADER, **{"Authorization": "Bearer " + access_token}}
-    data = requests.get(ROOT + path, headers=header)
+    data = do_retry_request(lambda: requests.get(ROOT + path, headers=header))
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -171,7 +184,6 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         print("Data is outdated")
         return True
     return False
-
 
 def setup_destiny_data():
     """
@@ -390,9 +402,10 @@ def get_set_oauth(code = None):
             "grant_type": "authorization_code",
             "code": code
         }
-    data = requests.post(url, data=info, headers=header).json()
-    if "error" in data:
+    data_raw = do_retry_request(lambda: requests.post(url, data=info, headers=header))
+    if "error" in data_raw.json():
         return None
+    data = data_raw.json()
 
     refresh_data = {
         "token": data["refresh_token"],

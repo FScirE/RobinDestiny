@@ -152,7 +152,7 @@ def get_pinnacle_data_embeds() -> list[Embed]:
         )
     return embeds
 
-def get_account_data_embeds_lookup(context: Interaction, name: str, tag: int, type: int = None) -> tuple[list[Embed], OwnedView, int, str]:
+def get_account_data_embeds_lookup(new_view: OwnedView, context: Interaction, name: str, tag: int, type: int = None) -> tuple[list[Embed], OwnedView, int, str]:
     """
     Gets formatted embeds with account data from name and tag for lookup command
     Also returns membership type and id
@@ -194,7 +194,7 @@ def get_account_data_embeds_lookup(context: Interaction, name: str, tag: int, ty
     )
 
     #create buttons view for each profile type
-    view = OwnedView(context.user.id)
+    view = new_view
     view.timeout = None
     for item in membership_types:
         if item == membership_type:
@@ -282,7 +282,7 @@ def get_search_loading_embed(name: str, page: int):
     embed.set_footer(text=f"Page: {page + 1}")
     return embed
 
-def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
+def get_search_embed(new_view: OwnedView, context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
     """
     Gets embed for a page of user search results
     """
@@ -332,7 +332,7 @@ def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed,
     embed.set_footer(text=f"Page: {page + 1}")
 
     #build view
-    view = OwnedView(context.user.id)
+    view = new_view
     view.timeout = None
     view.add_item(dropdown)
     if page > 0:
@@ -353,12 +353,12 @@ def get_search_embed(context: Interaction, name: str, page: int) -> tuple[Embed,
         )
     return embed, view
 
-def get_eververse_data_embeds(context: Interaction, category: str) -> tuple[list[Embed], OwnedView]:
+def get_eververse_data_embeds(new_view: OwnedView, context: Interaction, category: str) -> tuple[list[Embed], OwnedView]:
     """
     Gets embeds for a selected category in eververse
     """
     embeds = []
-    view = OwnedView(context.user.id)
+    view = new_view
     view.timeout = None
 
     #all available types of cosmetics
