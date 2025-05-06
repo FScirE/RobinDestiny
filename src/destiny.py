@@ -212,6 +212,9 @@ def setup_destiny_data():
     #milestones.json, for checking if up to date in the future
     print("  Getting milestones...")
     milestones_data = get_request_response("/Destiny2/Milestones/")
+    if milestones_data is None:
+        print("Destiny API Error!")
+        return False #api down or something else
     write_data_file(milestones_data, MILESTONES_FILE)
 
     #grandmaster.json
