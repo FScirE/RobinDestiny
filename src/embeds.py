@@ -33,7 +33,7 @@ def get_gm_data_embeds() -> list[Embed]:
         gm_name = gm_data["displayProperties"]["description"]
         gm_bg_url = destiny.IMG_ROOT + gm_data["pgcrImage"]
 
-        #data from gmdestination.json
+        #data from gm_destination.json
         destination_data = destiny.read_data_file(destiny.DESTINATION_FILE)
         dest_name = destination_data["displayProperties"]["name"]
         dest_description = destination_data["displayProperties"]["description"]
@@ -99,18 +99,20 @@ def get_gm_data_embeds() -> list[Embed]:
         )
 
     #nightfall weapon embed
-    weapon_data = destiny.read_data_file(destiny.GM_WEAPON_FILE)
-    weapon_name = weapon_data["displayProperties"]["name"]
-    weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
-    weapon_description = weapon_data["flavorText"]
-    embeds.insert(0,
-        Embed(
-            title=weapon_name,
-            description=weapon_description
+    directory = os.listdir(destiny.GM_WEAPONS_FOLDER)
+    for filename in directory:
+        weapon_data = destiny.read_data_file(os.path.join(destiny.GM_WEAPONS_FOLDER, filename))
+        weapon_name = weapon_data["displayProperties"]["name"]
+        weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
+        weapon_description = weapon_data["flavorText"]
+        embeds.insert(0,
+            Embed(
+                title=weapon_name,
+                description=weapon_description
+            )
+            .set_author(name="Weekly Nightfall Weapon")
+            .set_thumbnail(url=weapon_url)
         )
-        .set_author(name="Weekly Nightfall Weapon")
-        .set_thumbnail(url=weapon_url)
-    )
     return embeds
 
 def get_pinnacle_data_embeds() -> list[Embed]:

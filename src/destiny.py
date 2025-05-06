@@ -20,9 +20,9 @@ HEADER = {
 DATA_FOLDER = "data"
 MILESTONES_FILE = os.path.join(DATA_FOLDER, "milestones.json")
 GM_FILE = os.path.join(DATA_FOLDER, "grandmaster.json")
-DESTINATION_FILE = os.path.join(DATA_FOLDER, "gmdestination.json")
+DESTINATION_FILE = os.path.join(DATA_FOLDER, "gm_destination.json")
 MODIFIERS_FOLDER = os.path.join(DATA_FOLDER, "gm_modifiers")
-GM_WEAPON_FILE = os.path.join(DATA_FOLDER, "gmweapon.json")
+GM_WEAPONS_FOLDER = os.path.join(DATA_FOLDER, "gm_weapons")
 OAUTH_FILE = "./oauth.json"
 EVERVERSE_FOLDER = os.path.join(DATA_FOLDER, "eververse")
 RAID_DUNGEON_FOLDER = os.path.join(DATA_FOLDER, "raid_dungeon")
@@ -171,7 +171,7 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         not os.path.isfile(MILESTONES_FILE) or
         not os.path.isfile(GM_FILE) or
         not os.path.isfile(DESTINATION_FILE) or
-        not os.path.isfile(GM_WEAPON_FILE) or
+        not os.path.isdir(GM_WEAPONS_FOLDER) or
         not os.path.isdir(EVERVERSE_FOLDER) or
         not os.path.isdir(RAID_DUNGEON_FOLDER)):
         print("Data is incomplete")
@@ -305,10 +305,12 @@ def setup_destiny_data():
     for category in categories:
         #category id 2 = featured nf weapon shop
         if category["displayCategoryIndex"] == 2:
-            item_idx = category["itemIndexes"][1] #second item is adept
-            item = focusing_data["sales"]["data"][str(item_idx)]
-            item_data = get_manifest_data("InventoryItem", item["itemHash"])
-            write_data_file(item_data, GM_WEAPON_FILE)
+            for item_idx in category["itemIndexes"]:
+                item = focusing_data["sales"]["data"][str(item_idx)]
+                item_hash = item["itemHash"]
+                item_data = get_manifest_data("InventoryItem", item_hash)
+                if ("(Adept)" not in item_data["displayProperties"]["name"]):
+                    write_data_file(item_data, os.path.join(GM_WEAPONS_FOLDER, f"{item_hash}.json"))
             break
 
     #eververse weeklies
