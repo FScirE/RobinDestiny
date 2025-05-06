@@ -91,6 +91,7 @@ def do_retry_request(request_func):
         time.sleep(1 + atts)
         data = request_func()
         atts += 1
+        #print(f"Attempt {atts} Code {data.status_code}")
     return data
 
 def get_request_response(path):

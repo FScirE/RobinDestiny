@@ -8,7 +8,7 @@ from src.embeds import (
     get_account_data_embeds_lookup,
     get_character_data_embeds,
     get_search_embed,
-    get_search_loading_embed,
+    get_loading_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
     get_pinnacle_data_embeds,
@@ -52,7 +52,7 @@ async def handle_account_character_lookup(first: bool, context: discord.Interact
     """
     Handles response for account and characters lookup
     """
-    loading_embed = await asyncio.to_thread(get_search_loading_embed, name, int(tag))
+    loading_embed = await asyncio.to_thread(get_loading_embed, name, int(tag))
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed)
@@ -84,7 +84,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     """
     Handles the page scrolling etc of the user search
     """
-    loading_embed = await asyncio.to_thread(get_search_loading_embed, name, page)
+    loading_embed = await asyncio.to_thread(get_loading_embed, name, page)
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed)
@@ -183,11 +183,14 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     tag="The four digits after the '#'"
 )
 async def topweapons(context: discord.Interaction, name: str, tag: int):
+    loading_embed = await asyncio.to_thread(get_loading_embed, name, tag, True)
+    await context.response.send_message(embed=loading_embed)
     embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_weapons, name, str(tag))
     if embeds_initial is None:
-        await context.response.send_message("User was not found!", ephemeral=True)
+        await context.delete_original_response()
+        await context.followup.send("User was not found!", ephemeral=True)
     else:
-        await context.response.send_message(embeds=embeds_initial)
+        await context.edit_original_response(embeds=embeds_initial)
         embeds_full = await asyncio.to_thread(get_top_weapons_embeds, embeds_initial, account_data)
         await context.edit_original_response(embeds=embeds_full)
 

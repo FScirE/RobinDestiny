@@ -272,7 +272,7 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
-def get_search_loading_embed(name: str, tag: int = None):
+def get_loading_embed(name: str, tag: int = None, weapons: bool = False):
     """
     Gets embed for loading search/lookup command
     """
@@ -283,7 +283,10 @@ def get_search_loading_embed(name: str, tag: int = None):
         title=title,
         description="Searching..."
     )
-    embed.set_author(name="User lookup")
+    if weapons:
+        embed.set_author(name="Top Exotic Weapons")
+    else:
+        embed.set_author(name="User lookup")
     return embed
 
 def get_search_embed(new_view: OwnedView, context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
