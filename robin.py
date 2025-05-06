@@ -55,7 +55,7 @@ async def handle_account_character_lookup(first: bool, context: discord.Interact
     loading_embed = await asyncio.to_thread(get_search_loading_embed, name, int(tag))
     #loading to make command not time out
     if first:
-        await context.response.send_message(embed=loading_embed, ephemeral=True)
+        await context.response.send_message(embed=loading_embed)
     else:
         #save old message contents in case lookup fails
         original_embeds = context.message.embeds
@@ -70,25 +70,15 @@ async def handle_account_character_lookup(first: bool, context: discord.Interact
         await context.edit_original_response(embeds=original_embeds, view=original_view)
         return
     #response found
-    hook = context.followup
-    if first and embeds_initial is None:
-        await context.delete_original_response() #delete first loading ephemeral message
-        await hook.send("User was not found!", ephemeral=True, wait=True)
+    if embeds_initial is None:
+        await context.delete_original_response()
+        await context.followup.send("User was not found!", ephemeral=True, wait=True)
     else:
         for action in view.children:
             action.callback = action_callback
-        #account response
-        if first:
-            await context.delete_original_response() #delete first loading ephemeral message
-            hook_message = await hook.send(embeds=embeds_initial)
-        else:
-            await context.edit_original_response(embeds=embeds_initial, view=None)
-        #character response
+        await context.edit_original_response(embeds=embeds_initial, view=None)
         embeds_full = await asyncio.to_thread(get_character_data_embeds, embeds_initial, type, id)
-        if first:
-            await hook.edit_message(message_id=hook_message.id, embeds=embeds_full, view=view)
-        else:
-            await context.edit_original_response(embeds=embeds_full, view=view)
+        await context.edit_original_response(embeds=embeds_full, view=view)
 
 async def handle_search(first: bool, context: discord.Interaction, name: str, page: int = 0):
     """
@@ -97,7 +87,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     loading_embed = await asyncio.to_thread(get_search_loading_embed, name, page)
     #loading to make command not time out
     if first:
-        await context.response.send_message(embed=loading_embed, ephemeral=True)
+        await context.response.send_message(embed=loading_embed)
     else:
         #save old message contents in case search fails
         original_embed = context.message.embeds[0]
@@ -112,18 +102,13 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
         await context.edit_original_response(embed=original_embed, view=original_view)
         return
     #response found
-    hook = context.followup
-    if first and embed is None:
-        await context.delete_original_response() #delete first loading ephemeral message
-        await hook.send("No users found!", ephemeral=True)
+    if embed is None:
+        await context.delete_original_response()
+        await context.followup.send("No users found!", ephemeral=True)
     else:
         for action in view.children:
             action.callback = action_callback
-        if first:
-            await context.delete_original_response() #delete first loading ephemeral message
-            await hook.send(embed=embed, view=view)
-        else:
-            await context.edit_original_response(embed=embed, view=view)
+        await context.edit_original_response(embed=embed, view=view)
 
 #--------------------------------------------------------------------------
 async def action_callback(context: discord.Interaction):
