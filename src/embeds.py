@@ -272,16 +272,18 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
-def get_search_loading_embed(name: str, page: int):
+def get_search_loading_embed(name: str, tag: int = None):
     """
-    Gets embed for loading search command
+    Gets embed for loading search/lookup command
     """
+    title = f"Searching For: {name}"
+    if tag:
+        title += f"#{str(tag).zfill(4)}"
     embed = Embed(
-        title=f"Searching For: {name}",
+        title=title,
         description="Searching..."
     )
     embed.set_author(name="User lookup")
-    embed.set_footer(text=f"Page: {page + 1}")
     return embed
 
 def get_search_embed(new_view: OwnedView, context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:

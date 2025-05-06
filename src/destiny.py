@@ -87,9 +87,9 @@ def do_retry_request(request_func):
     """
     data = request_func()
     atts = 0
-    while data.status_code // 100 == 5 and atts < 10:
-        data = request_func()
+    while (data.status_code - 1) // 100 == 5 and atts < 10: #the -1 is to ignore code 500 (genious)
         time.sleep(1 + atts)
+        data = request_func()
         atts += 1
     return data
 

@@ -48,18 +48,47 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     else:
         await context.response.edit_message(embeds=embeds, view=view)
 
-async def handle_character_lookup(first: bool, context: discord.Interaction, embeds_initial: list[discord.Embed], view: OwnedView, type: int, id: str):
+async def handle_account_character_lookup(first: bool, context: discord.Interaction, name: str, tag: int, type: int = None):
     """
-    Handles lookup response after account data and embed has been gathered
+    Handles response for account and characters lookup
     """
-    for button in view.children:
-        button.callback = action_callback
+    loading_embed = await asyncio.to_thread(get_search_loading_embed, name, int(tag))
+    #loading to make command not time out
     if first:
-        await context.response.send_message(embeds=embeds_initial)
+        await context.response.send_message(embed=loading_embed, ephemeral=True)
     else:
-        await context.response.edit_message(embeds=embeds_initial, view=None)
-    embeds_full = await asyncio.to_thread(get_character_data_embeds, embeds_initial, type, id)
-    await context.edit_original_response(embeds=embeds_full, view=view)
+        #save old message contents in case lookup fails
+        original_embeds = context.message.embeds
+        original_view = OwnedView(context.user.id)
+        for comp in discord.ui.view._walk_all_components(context.message.components):
+            original_view.add_item(discord.ui.view._component_to_item(comp))
+        await context.response.edit_message(embed=loading_embed, view=None)
+    #actual response
+    new_view = OwnedView(context.user.id)
+    embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, new_view, context, name, tag, type)
+    if not first and embeds_initial is None:
+        await context.edit_original_response(embeds=original_embeds, view=original_view)
+        return
+    #response found
+    hook = context.followup
+    if first and embeds_initial is None:
+        await context.delete_original_response() #delete first loading ephemeral message
+        await hook.send("User was not found!", ephemeral=True, wait=True)
+    else:
+        for action in view.children:
+            action.callback = action_callback
+        #account response
+        if first:
+            await context.delete_original_response() #delete first loading ephemeral message
+            hook_message = await hook.send(embeds=embeds_initial)
+        else:
+            await context.edit_original_response(embeds=embeds_initial, view=None)
+        #character response
+        embeds_full = await asyncio.to_thread(get_character_data_embeds, embeds_initial, type, id)
+        if first:
+            await hook.edit_message(message_id=hook_message.id, embeds=embeds_full, view=view)
+        else:
+            await context.edit_original_response(embeds=embeds_full, view=view)
 
 async def handle_search(first: bool, context: discord.Interaction, name: str, page: int = 0):
     """
@@ -107,9 +136,7 @@ async def action_callback(context: discord.Interaction):
         name = splitted[0]
         tag = splitted[1]
         type = int(splitted[2])
-        new_view = OwnedView(context.user.id)
-        embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, new_view, context, name, tag, type)
-        await handle_character_lookup(False, context, embeds_initial, view, type, id)
+        await handle_account_character_lookup(False, context, name, tag, type)
     elif contents[0] == "search": #user search
         splitted = contents[1].split(";")
         name = splitted[0]
@@ -159,12 +186,7 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     if tag is None:
         await handle_search(True, context, name)
     else:
-        new_view = OwnedView(context.user.id)
-        embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, context, name, str(tag))
-        if embeds_initial is None:
-            await context.response.send_message("User was not found!", ephemeral=True)
-        else:
-            await handle_character_lookup(True, context, embeds_initial, view, type, id)
+        await handle_account_character_lookup(True, context, name, tag)
 
 #--------------------------------------------------------------------------
 @tree.command(
