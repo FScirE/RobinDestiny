@@ -160,6 +160,7 @@ def check_refresh_token():
     expiry_date = datetime.fromisoformat(data["expiryDate"])
     if datetime.now(timezone.utc) > expiry_date:
         return False
+    get_set_oauth() #valid refresh token can still fail on first attempt, this gets a new refresh token
     return True
 
 def data_outdated_incomplete(): #check if any folder or file is missing

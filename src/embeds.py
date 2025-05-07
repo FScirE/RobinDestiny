@@ -201,13 +201,16 @@ def get_account_data_embeds_lookup(new_view: OwnedView, context: Interaction, na
     for item in membership_types:
         if item == membership_type:
             button_style = ButtonStyle.primary
+            disabled = True
         else:
             button_style = ButtonStyle.secondary
+            disabled = False
         view.add_item(
             Button(
                 style=button_style,
                 label=destiny.platforms[item],
-                custom_id=f"lookup%{name};{tag};{item}"
+                custom_id=f"lookup%{name};{tag};{item}",
+                disabled=disabled
             )
         )
     return embeds, view, membership_type, membership_id
@@ -278,7 +281,7 @@ def get_loading_embed(name: str, tag: int = None, weapons: bool = False):
     """
     title = f"Searching For: {name}"
     if tag:
-        title += f"#{str(tag).zfill(4)}"
+        title += "#" + str(tag).zfill(4)
     embed = Embed(
         title=title,
         description="Searching..."
@@ -423,12 +426,15 @@ def get_eververse_data_embeds(new_view: OwnedView, context: Interaction, categor
     for existing in available_categories:
         if category == existing:
             button_style = ButtonStyle.primary
+            disabled = True
         else:
             button_style = ButtonStyle.secondary
+            disabled = False
         view.add_item(Button(
             style=button_style,
             label=existing + "s",
-            custom_id="eververse%" + existing
+            custom_id="eververse%" + existing,
+            disabled=disabled
         ))
     return embeds, view
 
