@@ -2,12 +2,11 @@ import requests
 import json
 import os
 import base64
-import time
-import io
 import shutil
 from PIL import Image
 from datetime import datetime, timezone, timedelta
 from dotenv import get_key
+from src.netreq import do_retry_request
 
 DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
 ROOT = "https://www.bungie.net/Platform"
@@ -81,33 +80,20 @@ classes = {
     3655393761 : "Titan"
 }
 
-def do_retry_request(request_func):
-    """
-    Performs a HTTP request and retries some times if server error
-    """
-    data = request_func()
-    atts = 0
-    while (data.status_code - 1) // 100 == 5 and atts < 10: #the -1 is to ignore code 500 (genious)
-        time.sleep(1 + atts)
-        data = request_func()
-        atts += 1
-        #print(f"Attempt {atts} Code {data.status_code}")
-    return data
-
-def get_request_response(path):
+def get_request_response(path, cache = True):
     """
     Get response from GET request to bungie API
     """
-    data = do_retry_request(lambda: requests.get(ROOT + path, headers=HEADER))
+    data = do_retry_request(cache, True, ROOT + path, HEADER)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
 
-def post_request_response(path, payload):
+def post_request_response(path, payload, cache = True):
     """
     Get response from POST request to bungie API
     """
-    data = do_retry_request(lambda: requests.post(ROOT + path, json=payload, headers=HEADER))
+    data = do_retry_request(cache, False, ROOT + path, HEADER, payload)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -139,12 +125,12 @@ def get_manifest_data(entry, hash):
     data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
     return data
 
-def get_request_response_oauth(path, access_token):
+def get_request_response_oauth(path, access_token, cache = True):
     """
     Get response from GET request with OAuth requirement with access key and components
     """
     header = {**HEADER, **{"Authorization": "Bearer " + access_token}}
-    data = do_retry_request(lambda: requests.get(ROOT + path, headers=header))
+    data = do_retry_request(cache, True, ROOT + path, header)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -225,7 +211,7 @@ def setup_destiny_data():
 
     #milestones.json, for checking if up to date in the future
     print("  Getting milestones...")
-    milestones_data = get_request_response("/Destiny2/Milestones/")
+    milestones_data = get_request_response("/Destiny2/Milestones/", False)
     if milestones_data is None:
         print("Destiny API Error!")
         return False #api down or something else
@@ -234,7 +220,7 @@ def setup_destiny_data():
     #grandmaster.json
     print("  Getting grandmaster...")
     character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
-                                f"?components={component_types['CharacterActivities']}", access_token)
+                                f"?components={component_types['CharacterActivities']}", access_token, False)
     activities = character_data["activities"]["data"]["availableActivities"]
     found = False
     for activity in activities:
@@ -302,7 +288,7 @@ def setup_destiny_data():
     print("  Getting gm weapon...")
     focusing_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/Vendors/{hashes['FocusedDecoding']}/" +
                                 f"?components={component_types['VendorCategories']}," +
-                                f"{component_types['VendorSales']}", access_token)
+                                f"{component_types['VendorSales']}", access_token, False)
     categories = focusing_data["categories"]["data"]["categories"]
     for category in categories:
         #category id 2 = featured nf weapon shop
@@ -322,7 +308,7 @@ def setup_destiny_data():
         print(f"    {key.title()}...")
         eververse_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
                             f"?components={component_types['VendorCategories']}," +
-                            f"{component_types['VendorSales']}", access_token)
+                            f"{component_types['VendorSales']}", access_token, False)
         #category id 2 = featured bright dust
         #category id 9 = bright dust items
         #category id 10 = bright dust flair
@@ -406,7 +392,7 @@ def get_set_oauth(code = None):
             "grant_type": "authorization_code",
             "code": code
         }
-    data_raw = do_retry_request(lambda: requests.post(url, data=info, headers=header))
+    data_raw = do_retry_request(False, False, url, header, info)
     if "error" in data_raw.json():
         return None
     data = data_raw.json()

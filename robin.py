@@ -40,7 +40,7 @@ async def handle_eververse(first: bool, context: discord.Interaction, arg: str =
     Responds with embeds and view from eververse creator and sets callbacks for buttons
     """
     new_view = OwnedView(context.user.id)
-    embeds, view = await asyncio.to_thread(get_eververse_data_embeds, new_view, context, arg)
+    embeds, view = await asyncio.to_thread(get_eververse_data_embeds, new_view, arg)
     for button in view.children:
         button.callback = action_callback
     if first:
@@ -65,7 +65,7 @@ async def handle_account_character_lookup(first: bool, context: discord.Interact
         await context.response.edit_message(embed=loading_embed, view=None)
     #actual response
     new_view = OwnedView(context.user.id)
-    embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, new_view, context, name, tag, type)
+    embeds_initial, view, type, id = await asyncio.to_thread(get_account_data_embeds_lookup, new_view, name, tag, type)
     if not first and embeds_initial is None:
         await context.edit_original_response(embeds=original_embeds, view=original_view)
         return
@@ -84,7 +84,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     """
     Handles the page scrolling etc of the user search
     """
-    loading_embed = await asyncio.to_thread(get_loading_embed, name, page)
+    loading_embed = await asyncio.to_thread(get_loading_embed, name)
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed)
@@ -97,7 +97,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
         await context.response.edit_message(embed=loading_embed, view=None)
     #actual response
     new_view = OwnedView(context.user.id)
-    embed, view = await asyncio.to_thread(get_search_embed, new_view, context, name, page)
+    embed, view = await asyncio.to_thread(get_search_embed, new_view, name, page)
     if not first and embed is None:
         await context.edit_original_response(embed=original_embed, view=original_view)
         return

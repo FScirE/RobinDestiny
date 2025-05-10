@@ -154,7 +154,7 @@ def get_pinnacle_data_embeds() -> list[Embed]:
         )
     return embeds
 
-def get_account_data_embeds_lookup(new_view: OwnedView, context: Interaction, name: str, tag: int, type: int = None) -> tuple[list[Embed], OwnedView, int, str]:
+def get_account_data_embeds_lookup(new_view: OwnedView, name: str, tag: int, type: int = None) -> tuple[list[Embed], OwnedView, int, str]:
     """
     Gets formatted embeds with account data from name and tag for lookup command
     Also returns membership type and id
@@ -292,7 +292,7 @@ def get_loading_embed(name: str, tag: int = None, weapons: bool = False):
         embed.set_author(name="User lookup")
     return embed
 
-def get_search_embed(new_view: OwnedView, context: Interaction, name: str, page: int) -> tuple[Embed, OwnedView]:
+def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, OwnedView]:
     """
     Gets embed for a page of user search results
     """
@@ -363,7 +363,7 @@ def get_search_embed(new_view: OwnedView, context: Interaction, name: str, page:
         )
     return embed, view
 
-def get_eververse_data_embeds(new_view: OwnedView, context: Interaction, category: str) -> tuple[list[Embed], OwnedView]:
+def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[Embed], OwnedView]:
     """
     Gets embeds for a selected category in eververse
     """
