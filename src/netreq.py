@@ -23,9 +23,7 @@ def do_retry_request(use_cache, is_get, url, header, payload = None):
     if use_cache:
         data = cache_lookup(url, header, payload)
         if data:
-            print("used cache")
             return data
-    print("not used cache")
     #create request function
     if is_get:
         request_func = lambda: requests.get(url, headers=header)
