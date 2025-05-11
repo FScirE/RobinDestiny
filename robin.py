@@ -169,9 +169,9 @@ async def pinnacle(context: discord.Interaction):
 )
 async def lookup(context: discord.Interaction, name: str, tag: int = None):
     if tag is None:
-        await handle_search(True, context, name)
+        await handle_search(True, context, name.lower())
     else:
-        await handle_account_character_lookup(True, context, name, tag)
+        await handle_account_character_lookup(True, context, name.lower(), tag)
 
 #--------------------------------------------------------------------------
 @tree.command(
@@ -183,9 +183,9 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     tag="The four digits after the '#'"
 )
 async def topweapons(context: discord.Interaction, name: str, tag: int):
-    loading_embed = await asyncio.to_thread(get_loading_embed, name, tag, True)
+    loading_embed = await asyncio.to_thread(get_loading_embed, name.lower(), tag, True)
     await context.response.send_message(embed=loading_embed)
-    embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_weapons, name, str(tag))
+    embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_weapons, name.lower(), str(tag))
     if embeds_initial is None:
         await context.delete_original_response()
         await context.followup.send("User was not found!", ephemeral=True)
