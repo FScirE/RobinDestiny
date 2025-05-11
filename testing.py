@@ -19,4 +19,11 @@ print("start")
 # _1, _2 = embeds.get_account_data_embeds_weapons("FScirE", 322)
 # _3 = embeds.get_top_weapons_embeds(_1, _2)
 
+# m_type = get_key(".env", "MEMBERSHIP_TYPE")
+# m_id = get_key(".env", "MEMBERSHIP_ID")
+# ch_id = get_key(".env", "HUNTER_ID")
+
+# data = destiny.get_request_response(f"/Destiny2/{m_type}/Account/{m_id}/Character/{ch_id}/Stats/Activities/" +
+#                                     f"?count=5&page=0")
+
 print("end")

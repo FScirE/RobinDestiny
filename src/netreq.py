@@ -35,7 +35,11 @@ def do_retry_request(use_cache, is_get, url, header, payload = None):
     data = request_func()
     atts = 0
     while (data.status_code - 1) // 100 == 5 and atts < AMT_RETRIES: #the -1 is to ignore code 500 (genious)
-        time.sleep(1 + atts * RETRY_TIMER_MULT)
+        throttle_time = data.json()["ThrottleSeconds"]
+        if throttle_time != 0:
+            time.sleep(throttle_time)
+        else:
+            time.sleep(1 + atts * RETRY_TIMER_MULT)
         data = request_func()
         atts += 1
         #print(f"Attempt {atts} Code {data.status_code}")
