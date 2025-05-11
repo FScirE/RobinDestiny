@@ -181,11 +181,13 @@ def get_account_data_embeds_lookup(new_view: OwnedView, name: str, tag: int, typ
         membership_id = account_data[0]["membershipId"]
         membership_url = destiny.IMG_ROOT + account_data[0]["iconPath"]
 
+    bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
+
     #create embed
     embeds = []
     embeds.append(
         Embed(
-            title=f"{name}#{str(tag).zfill(4)}",
+            title=f"{bungie_display_name}#{str(tag).zfill(4)}",
             description="Display Name: " + display_name
         )
         .set_author(name="User Lookup")
@@ -481,11 +483,13 @@ def get_account_data_embeds_weapons(name: str, tag: int) -> tuple[list[Embed], o
     display_names = [m["displayName"] for m in account_data]
     platforms = [destiny.platforms[m["membershipType"]] for m in account_data]
 
+    bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
+
     #create embed
     embeds = []
     embeds.append(
         Embed(
-            title=f"{name}#{str(tag).zfill(4)}"
+            title=f"{bungie_display_name}#{str(tag).zfill(4)}"
         )
         .set_author(name="Top Exotic Weapons")
         .add_field(name="Display Names", value=", ".join(display_names), inline=False)
