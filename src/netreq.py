@@ -3,6 +3,8 @@ import requests
 from datetime import datetime, timedelta
 
 MAX_SIZE = 100
+AMT_RETRIES = 10
+RETRY_TIMER_MULT = 1.0 #amount of time increase per retry
 CACHE_TIMEOUT = 300 #in seconds
 
 key_order = []
@@ -32,8 +34,8 @@ def do_retry_request(use_cache, is_get, url, header, payload = None):
     #do request
     data = request_func()
     atts = 0
-    while (data.status_code - 1) // 100 == 5 and atts < 10: #the -1 is to ignore code 500 (genious)
-        time.sleep(1 + atts)
+    while (data.status_code - 1) // 100 == 5 and atts < AMT_RETRIES: #the -1 is to ignore code 500 (genious)
+        time.sleep(1 + atts * RETRY_TIMER_MULT)
         data = request_func()
         atts += 1
         #print(f"Attempt {atts} Code {data.status_code}")
@@ -73,9 +75,8 @@ def cache_lookup(url, header, payload):
             key_times.pop(key)
             requests_cache.pop(key)
             return None
-        #refresh LRU and timer
+        #refresh LRU
         key_order.remove(key)
         key_order.insert(0, key)
-        key_times[key] = datetime.now()
         return requests_cache[key]
     return None
