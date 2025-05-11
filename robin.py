@@ -119,14 +119,14 @@ async def action_callback(context: discord.Interaction):
         else: #from search dropdown
             splitted = context.data["values"][0].split(";")
         name = splitted[0]
-        tag = splitted[1]
+        tag = int(splitted[1])
         type = int(splitted[2])
-        await handle_account_character_lookup(False, context, name, tag, type)
+        await handle_account_character_lookup(False, context, name.lower(), tag, type)
     elif contents[0] == "search": #user search
         splitted = contents[1].split(";")
         name = splitted[0]
         page = int(splitted[1])
-        await handle_search(False, context, name, page)
+        await handle_search(False, context, name.lower(), page)
     elif contents[0] == "eververse": #eververse
         await handle_eververse(False, context, contents[1])
     else:

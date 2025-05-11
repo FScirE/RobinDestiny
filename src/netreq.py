@@ -2,7 +2,7 @@ import time
 import requests
 from datetime import datetime, timedelta
 
-MAX_SIZE = 100
+MAX_SIZE = 200
 AMT_RETRIES = 10
 RETRY_TIMER_MULT = 1.0 #amount of time increase per retry
 CACHE_TIMEOUT = 300 #in seconds
@@ -25,7 +25,9 @@ def do_retry_request(use_cache, is_get, url, header, payload = None):
     if use_cache:
         data = cache_lookup(url, header, payload)
         if data:
+            #print("cache " + create_key(url, header, payload))
             return data
+    #print("not cache " + create_key(url, header, payload))
     #create request function
     if is_get:
         request_func = lambda: requests.get(url, headers=header)
