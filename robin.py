@@ -241,7 +241,7 @@ async def robin(context: discord.Interaction):
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)
-        .add_field(name="/lastactivity", value="Get stats and information about the last activity played by an account")
+        .add_field(name="/lastactivity", value="See stats and information about the last activity played by an account")
         .add_field(name="/patches", value="Get the most recent Destiny 2 patch notes", inline=False)
     )
 

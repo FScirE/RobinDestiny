@@ -642,22 +642,83 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
     activity_data = destiny.get_manifest_data("Activity", activity_hash)
     activity_name = activity_data["displayProperties"]["name"]
     activity_description = activity_data["displayProperties"]["description"]
-    activity_image = destiny.IMG_ROOT + activity_data["pgcrImage"]
+    activity_image_url = destiny.IMG_ROOT + activity_data["pgcrImage"]
 
     destination_data = destiny.get_manifest_data("Destination", activity_data["destinationHash"])
     dest_name = destination_data["displayProperties"]["name"]
 
-    #create embeds
+    #create activity embed
     embeds.append(Embed(
             title=activity_name,
             description=activity_description
         )
         .add_field(name=time_since_played + " ago", value="")
-        .set_image(url=activity_image)
+        .set_image(url=activity_image_url)
         .set_footer(text=dest_name)
     )
-    for player in recent_activity["entries"]:
-        pass #info and stats for each player
+
+    players = recent_activity["entries"][:8] #max 10 embeds in a message
+    players.sort(key=lambda p: p["score"]["basic"]["value"], reverse=True)
+    activity_completed = 0.0 #see if any player completed activity
+
+    for player in players:
+        #player info
+        guardian_class = player["player"]["characterClass"]
+        power = player["player"]["lightLevel"]
+        platform_type = player["player"]["destinyUserInfo"]["membershipType"]
+        display_name = player["player"]["destinyUserInfo"]["displayName"]
+        name = player["player"]["destinyUserInfo"]["bungieGlobalDisplayName"]
+        tag = str(player["player"]["destinyUserInfo"]["bungieGlobalDisplayNameCode"]).zfill(4)
+
+        #emblem
+        emblem_url = destiny.IMG_ROOT + player["player"]["destinyUserInfo"]["iconPath"]
+        emblem_hash = player["player"]["emblemHash"]
+        emblem_data = destiny.get_manifest_data("InventoryItem", emblem_hash)
+        emblem_bg_url = destiny.IMG_ROOT + emblem_data["secondarySpecial"]
+        #copy emblem color
+        r = emblem_data["backgroundColor"]["red"]
+        g = emblem_data["backgroundColor"]["green"]
+        b = emblem_data["backgroundColor"]["blue"]
+
+        #player stats
+        completed = player["values"]["completed"]["basic"]["value"]
+        score = player["score"]["basic"]["displayValue"]
+        kills = int(player["values"]["kills"]["basic"]["value"])
+        assists = int(player["values"]["assists"]["basic"]["value"])
+        deaths = int(player["values"]["deaths"]["basic"]["value"])
+        kdr = player["values"]["killsDeathsRatio"]["basic"]["displayValue"]
+        time_played = player["values"]["timePlayedSeconds"]["basic"]["displayValue"]
+
+        activity_completed += completed
+
+        #create player embed
+        embed = Embed(
+            title=display_name,
+            description=f"{power} {guardian_class}",
+            color=Colour.from_rgb(r, g, b)
+        )
+        embed.set_author(name=f"{name}#{tag}")
+        embed.set_thumbnail(url=emblem_url)
+        embed.set_image(url=emblem_bg_url)
+        embed.set_footer(text=destiny.platforms[platform_type])
+
+        #add stat fields
+        embed.add_field(name="Score", value=score)
+        embed.add_field(name="Kills", value=str(kills + assists))
+        embed.add_field(name="Final Blows", value=str(kills))
+        embed.add_field(name="Deaths", value=str(deaths))
+        embed.add_field(name="K/D", value=kdr)
+        embed.add_field(name="Time Played", value=time_played)
+
+        if not completed: #mark as not completed
+            embed.color = Colour.from_rgb(240, 77, 66)
+            embed.add_field(name="Did not complete", value="", inline=False)
+        embeds.append(embed)
+
+    #mark activity as not completed if no player completed
+    if not activity_completed:
+        embeds[1].color = Colour.from_rgb(240, 77, 66)
+        embeds[1].add_field(name="Did not complete", value="", inline=False)
     return embeds
 
 def format_timedelta(time: timedelta) -> str:
