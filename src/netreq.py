@@ -1,5 +1,6 @@
 import time
 import requests
+from requests import Response
 from datetime import datetime, timedelta
 
 MAX_SIZE = 200
@@ -11,13 +12,13 @@ key_order = []
 key_times = {}
 requests_cache = {}
 
-def create_key(url, header, payload):
+def create_key(url: str, header: object, payload: object) -> str:
     """
     Create key for cache lookups from request data
     """
     return f"{url};{str(header)};{str(payload)}"
 
-def do_retry_request(use_cache, is_get, url, header, payload = None):
+def do_retry_request(use_cache: bool, is_get: bool, url: str, header: object, payload: object = None) -> Response:
     """
     Performs a HTTP request and retries some times if server error
     """
@@ -50,7 +51,7 @@ def do_retry_request(use_cache, is_get, url, header, payload = None):
         insert_cache(data, url, header, payload)
     return data
 
-def insert_cache(data, url, header, payload):
+def insert_cache(data: object, url: str, header: object, payload: object) -> None:
     """
     Inserts into cache
     """
@@ -69,7 +70,7 @@ def insert_cache(data, url, header, payload):
         key_order.remove(key)
         key_order.insert(0, key)
 
-def cache_lookup(url, header, payload):
+def cache_lookup(url: str, header: object, payload: object) -> object:
     """
     Looks if request is in cache, returns data if it is
     """

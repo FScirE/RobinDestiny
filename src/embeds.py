@@ -277,9 +277,9 @@ def get_character_data_embeds(initial: list[Embed], type: int, id: str) -> list[
         )
     return embeds
 
-def get_loading_embed(name: str, tag: int = None, weapons: bool = False):
+def get_loading_embed(command: str, name: str, tag: int = None):
     """
-    Gets embed for loading search/lookup command
+    Gets embed for loading for multiple commands
     """
     title = f"Searching For: {name}"
     if tag:
@@ -288,10 +288,12 @@ def get_loading_embed(name: str, tag: int = None, weapons: bool = False):
         title=title,
         description="Searching..."
     )
-    if weapons:
+    if command == "topweapons":
         embed.set_author(name="Top Exotic Weapons")
-    else:
+    elif command in ["lookup", "search"]:
         embed.set_author(name="User lookup")
+    elif command == "lastactivity":
+        embed.set_author(name="Last activity")
     return embed
 
 def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, OwnedView]:
@@ -564,6 +566,98 @@ def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int
             .add_field(name="Kills", value=str(weapon_kills))
         )
         pos += 1
+    return embeds
+
+def get_account_data_embeds_activity(name: str, tag: int) -> tuple[list[Embed], object]:
+    """
+    Gets formatted embeds with account data from name and tag for last activity command
+    Also returns account object
+    """
+    #get account data
+    account_data = destiny.get_account_data(name, tag)
+    if not account_data:
+        return None, None
+
+    bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
+
+    #create embed
+    embeds = []
+    embeds.append(
+        Embed(
+            title=f"{bungie_display_name}#{str(tag).zfill(4)}"
+        )
+        .set_author(name="Last Activity")
+    )
+    embeds.append(
+        Embed(description="Loading last activity...")
+    )
+    return embeds, account_data
+
+def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> list[Embed]:
+    """
+    Gets embed with stats and information of an accounts most recent activity
+    """
+    embeds = [initial[0]]
+    activities = []
+    character_platforms = {}
+
+    #get last activity for each character on each account
+    for account in accounts_data:
+        membership_type = account["membershipType"]
+        membership_id = account["membershipId"]
+        membership_url = destiny.IMG_ROOT + account["iconPath"]
+        display_name = account["displayName"]
+        response = destiny.get_characters_data(membership_type, membership_id)
+        if not response:
+            continue
+        character_ids = list(response)
+        for character_id in character_ids:
+            character_platforms[character_id] = (membership_type, membership_url, display_name)
+            activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
+                                                    f"?count=1&mode=7&page=0") #for now only pve (mode=7)
+            if not activities_data["activities"]:
+                continue
+            reference_id = int(activities_data["activities"][0]["activityDetails"]["instanceId"])
+            activity_report = destiny.get_request_response(f"/Destiny2/Stats/PostGameCarnageReport/{reference_id}/")
+            activities.append(activity_report)
+
+    #get last activity
+    activities.sort(key=lambda a: datetime.fromisoformat(a["period"].replace("Z", "+00:00")), reverse=True)
+    recent_activity = activities[0]
+
+    #player platform for this activity
+    for player in recent_activity["entries"]:
+        character_id = player["characterId"]
+        if character_id in character_platforms.keys():
+            platform_id, platform_url, display_name = character_platforms[character_id]
+    embeds[0].description = "Display Name: " + display_name
+    embeds[0].set_footer(text=f"Platform: {destiny.platforms[platform_id]}", icon_url=platform_url)
+
+    #get activity data
+    activity_time = datetime.fromisoformat(recent_activity["period"].replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    time_since_played = format_timedelta(now - activity_time)
+
+    activity_hash = recent_activity["activityDetails"]["directorActivityHash"]
+    activity_data = destiny.get_manifest_data("Activity", activity_hash)
+    activity_name = activity_data["displayProperties"]["name"]
+    activity_description = activity_data["displayProperties"]["description"]
+    activity_image = destiny.IMG_ROOT + activity_data["pgcrImage"]
+
+    destination_data = destiny.get_manifest_data("Destination", activity_data["destinationHash"])
+    dest_name = destination_data["displayProperties"]["name"]
+
+    #create embeds
+    embeds.append(Embed(
+            title=activity_name,
+            description=activity_description
+        )
+        .add_field(name=time_since_played + " ago", value="")
+        .set_image(url=activity_image)
+        .set_footer(text=dest_name)
+    )
+    for player in recent_activity["entries"]:
+        pass #info and stats for each player
     return embeds
 
 def format_timedelta(time: timedelta) -> str:

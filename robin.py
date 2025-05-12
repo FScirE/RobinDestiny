@@ -14,7 +14,9 @@ from src.embeds import (
     get_pinnacle_data_embeds,
     get_patches_data_embed,
     get_account_data_embeds_weapons,
-    get_top_weapons_embeds
+    get_top_weapons_embeds,
+    get_account_data_embeds_activity,
+    get_last_activity_embeds
 )
 import discord
 
@@ -52,7 +54,7 @@ async def handle_account_character_lookup(first: bool, context: discord.Interact
     """
     Handles response for account and characters lookup
     """
-    loading_embed = await asyncio.to_thread(get_loading_embed, name, int(tag))
+    loading_embed = await asyncio.to_thread(get_loading_embed, "lookup", name, int(tag))
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed)
@@ -84,7 +86,7 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
     """
     Handles the page scrolling etc of the user search
     """
-    loading_embed = await asyncio.to_thread(get_loading_embed, name)
+    loading_embed = await asyncio.to_thread(get_loading_embed, "search", name)
     #loading to make command not time out
     if first:
         await context.response.send_message(embed=loading_embed)
@@ -183,7 +185,7 @@ async def lookup(context: discord.Interaction, name: str, tag: int = None):
     tag="The four digits after the '#'"
 )
 async def topweapons(context: discord.Interaction, name: str, tag: int):
-    loading_embed = await asyncio.to_thread(get_loading_embed, name.lower(), tag, True)
+    loading_embed = await asyncio.to_thread(get_loading_embed, "topweapons", name.lower(), tag)
     await context.response.send_message(embed=loading_embed)
     embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_weapons, name.lower(), str(tag))
     if embeds_initial is None:
@@ -192,6 +194,27 @@ async def topweapons(context: discord.Interaction, name: str, tag: int):
     else:
         await context.edit_original_response(embeds=embeds_initial)
         embeds_full = await asyncio.to_thread(get_top_weapons_embeds, embeds_initial, account_data)
+        await context.edit_original_response(embeds=embeds_full)
+
+#--------------------------------------------------------------------------
+@tree.command(
+    name="lastactivity",
+    description="Get stats and information from last activity of a player"
+)
+@discord.app_commands.describe(
+    name="Destiny username",
+    tag="The four digits after the '#'"
+)
+async def lastactivity(context: discord.Interaction, name: str, tag: int):
+    loading_embed = await asyncio.to_thread(get_loading_embed, "lastactivity", name.lower(), tag)
+    await context.response.send_message(embed=loading_embed)
+    embeds_initial, account_data = await asyncio.to_thread(get_account_data_embeds_activity, name.lower(), str(tag))
+    if embeds_initial is None:
+        await context.delete_original_response()
+        await context.followup.send("User was not found!", ephemeral=True)
+    else:
+        await context.edit_original_response(embeds=embeds_initial)
+        embeds_full = await asyncio.to_thread(get_last_activity_embeds, embeds_initial, account_data)
         await context.edit_original_response(embeds=embeds_full)
 
 #--------------------------------------------------------------------------
@@ -218,6 +241,7 @@ async def robin(context: discord.Interaction):
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)
+        .add_field(name="/lastactivity", value="Get stats and information about the last activity played by an account")
         .add_field(name="/patches", value="Get the most recent Destiny 2 patch notes", inline=False)
     )
 

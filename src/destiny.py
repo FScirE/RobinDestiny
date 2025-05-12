@@ -80,7 +80,7 @@ classes = {
     3655393761 : "Titan"
 }
 
-def get_request_response(path, cache = True):
+def get_request_response(path: str, cache: bool = True) -> object:
     """
     Get response from GET request to bungie API
     """
@@ -89,7 +89,7 @@ def get_request_response(path, cache = True):
         return None
     return data.json()["Response"]
 
-def post_request_response(path, payload, cache = True):
+def post_request_response(path: str, payload: object, cache: bool = True) -> object:
     """
     Get response from POST request to bungie API
     """
@@ -98,7 +98,7 @@ def post_request_response(path, payload, cache = True):
         return None
     return data.json()["Response"]
 
-def write_data_file(data, filepath):
+def write_data_file(data: object, filepath: str) -> None:
     """
     Write json data to file
     """
@@ -106,7 +106,7 @@ def write_data_file(data, filepath):
     with open(filepath, "w") as file:
         json.dump(data, file, indent=4)
 
-def read_data_file(filepath):
+def read_data_file(filepath: str) -> object:
     """
     Read data from json file
     """
@@ -118,14 +118,14 @@ def read_data_file(filepath):
     else:
         return data
 
-def get_manifest_data(entry, hash):
+def get_manifest_data(entry: str, hash: int) -> object:
     """
     Gets data from manifest
     """
     data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
     return data
 
-def get_request_response_oauth(path, access_token, cache = True):
+def get_request_response_oauth(path: str, access_token: str, cache: bool = True) -> object:
     """
     Get response from GET request with OAuth requirement with access key and components
     """
@@ -136,7 +136,7 @@ def get_request_response_oauth(path, access_token, cache = True):
     return data.json()["Response"]
 
 
-def check_refresh_token():
+def check_refresh_token() -> bool:
     """
     Checks if refresh token exists or if outdated
     """
@@ -149,7 +149,7 @@ def check_refresh_token():
     get_set_oauth() #valid refresh token can still fail on first attempt, this gets a new refresh token
     return True
 
-def data_outdated_incomplete(): #check if any folder or file is missing
+def data_outdated_incomplete() -> bool:
     """
     Checks if all data exists and reads end date of first
     entry in milestones to see if data needs updating
@@ -173,7 +173,7 @@ def data_outdated_incomplete(): #check if any folder or file is missing
         return True
     return False
 
-def setup_destiny_data():
+def setup_destiny_data() -> bool:
     """
     Setup weekly Destiny json data
     """
@@ -331,7 +331,7 @@ def setup_destiny_data():
     print("Done!")
     return True
 
-def get_account_data(name, tag):
+def get_account_data(name: str, tag: int) -> object:
     """
     Gets account data from name and tag
     """
@@ -342,7 +342,7 @@ def get_account_data(name, tag):
     account_data = post_request_response("/Destiny2/SearchDestinyPlayerByBungieName/-1/", info)
     return account_data
 
-def get_characters_data(type, id):
+def get_characters_data(type: int, id: str) -> object:
     """
     Gets the characters for a given account
     """
@@ -353,7 +353,7 @@ def get_characters_data(type, id):
         return None
     return response["characters"]["data"]
 
-def get_rarity_color(item):
+def get_rarity_color(item: object) -> tuple[int, int, int]:
     """
     Get the rarity color of a given InventoryItem as r,g,b
     """
@@ -365,7 +365,7 @@ def get_rarity_color(item):
     else: #Rare
         return 86, 126, 157
 
-def get_set_oauth(code = None):
+def get_set_oauth(code: bool = None) -> str:
     """
     Gets OAuth access token given an authentication code, or using refresh token,
     and saves refresh token to file
