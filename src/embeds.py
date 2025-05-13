@@ -615,7 +615,7 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
             character_platforms[character_id] = (membership_type, membership_url, display_name)
             activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
                                                     f"?count=1&mode=7&page=0") #for now only pve (mode=7)
-            if not activities_data["activities"]:
+            if not activities_data or not activities_data["activities"]:
                 continue
             reference_id = int(activities_data["activities"][0]["activityDetails"]["instanceId"])
             activity_report = destiny.get_request_response(f"/Destiny2/Stats/PostGameCarnageReport/{reference_id}/")
@@ -623,6 +623,8 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
 
     #get last activity
     activities.sort(key=lambda a: datetime.fromisoformat(a["period"].replace("Z", "+00:00")), reverse=True)
+    if not activities:
+        return embeds + [Embed(title="No activities found!")]
     recent_activity = activities[0]
 
     #player platform for this activity
@@ -652,7 +654,8 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
             title=activity_name,
             description=activity_description
         )
-        .add_field(name=time_since_played + " ago", value="")
+        .add_field(name="Started From Beginning" if recent_activity["activityWasStartedFromBeginning"] else "Started From Checkpoint", value="", inline=False)
+        .add_field(name=time_since_played + " ago", value="", inline=False)
         .set_image(url=activity_image_url)
         .set_footer(text=dest_name)
     )
@@ -703,11 +706,11 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         embed.set_footer(text=destiny.platforms[platform_type])
 
         #add stat fields
-        embed.add_field(name="Score", value=score)
         embed.add_field(name="Kills", value=str(kills + assists))
-        embed.add_field(name="Final Blows", value=str(kills))
         embed.add_field(name="Deaths", value=str(deaths))
         embed.add_field(name="K/D", value=kdr)
+        embed.add_field(name="Final Blows", value=str(kills))
+        embed.add_field(name="Score", value=score)
         embed.add_field(name="Time Played", value=time_played)
 
         if not completed: #mark as not completed
