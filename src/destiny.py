@@ -392,7 +392,7 @@ def get_set_oauth(code: bool = None) -> str:
             "grant_type": "authorization_code",
             "code": code
         }
-    data_raw = do_retry_request(False, False, url, header, info)
+    data_raw = do_retry_request(False, False, url, header, data_http=info)
     if "error" in data_raw.json():
         return None
     data = data_raw.json()
