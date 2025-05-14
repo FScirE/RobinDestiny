@@ -578,6 +578,10 @@ def get_account_data_embeds_activity(name: str, tag: int) -> tuple[list[Embed], 
 
     bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
 
+    #keep track of which display names and platforms account has
+    display_names = [m["displayName"] for m in account_data]
+    platforms = [destiny.platforms[m["membershipType"]][0] for m in account_data]
+
     #create embed
     embeds = []
     embeds.append(
@@ -585,6 +589,8 @@ def get_account_data_embeds_activity(name: str, tag: int) -> tuple[list[Embed], 
             title=f"{bungie_display_name}#{str(tag).zfill(4)}"
         )
         .set_author(name="Last Activity")
+        .add_field(name="Display Names", value=", ".join(display_names), inline=False)
+        .add_field(name="Platforms", value=", ".join(platforms), inline=False)
     )
     embeds.append(
         Embed(description="Loading last activity...")
@@ -597,19 +603,16 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
     """
     embeds = [initial[0]]
     activities = []
-    character_platforms = {}
 
     #get last activity for each character on each account
     for account in accounts_data:
         membership_type = account["membershipType"]
         membership_id = account["membershipId"]
-        display_name = account["displayName"]
         response = destiny.get_characters_data(membership_type, membership_id)
         if not response:
             continue
         character_ids = list(response)
         for character_id in character_ids:
-            character_platforms[character_id] = (membership_type, display_name)
             activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
                                                     f"?count=1&mode=7&page=0", False) #for now only pve (mode=7)
             if not activities_data or not activities_data["activities"]:
@@ -623,14 +626,6 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
     if not activities:
         return embeds + [Embed(title="No activities found!")]
     recent_activity = activities[0]
-
-    #player platform for this activity
-    for player in recent_activity["entries"]:
-        character_id = player["characterId"]
-        if character_id in character_platforms.keys():
-            platform_id, display_name = character_platforms[character_id]
-    embeds[0].description = "Display Name: " + display_name
-    embeds[0].set_footer(text=f"Platform: {destiny.platforms[platform_id][0]}", icon_url=destiny.platforms[platform_id][1])
 
     #get activity data
     activity_time = datetime.fromisoformat(recent_activity["period"].replace("Z", "+00:00"))
