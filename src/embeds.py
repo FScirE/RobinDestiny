@@ -651,8 +651,8 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
             title=activity_name,
             description=activity_description
         )
-        .add_field(name="Started from beginning " if recent_activity["activityWasStartedFromBeginning"]
-                        else "Started from checkpoint " + time_since_played + " ago",
+        .add_field(name=("Started from beginning " if recent_activity["activityWasStartedFromBeginning"]
+                        else "Started from checkpoint ") + time_since_played + " ago",
             value="", inline=False)
         .set_image(url=activity_image_url)
         .set_footer(text=dest_name)
