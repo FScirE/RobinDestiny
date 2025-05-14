@@ -174,12 +174,10 @@ def get_account_data_embeds_lookup(new_view: OwnedView, name: str, tag: int, typ
             if data["membershipType"] == membership_type:
                 display_name = data["displayName"]
                 membership_id = data["membershipId"]
-                membership_url = destiny.IMG_ROOT + data["iconPath"]
     else:
         display_name = account_data[0]["displayName"]
         membership_type = account_data[0]["membershipType"]
         membership_id = account_data[0]["membershipId"]
-        membership_url = destiny.IMG_ROOT + account_data[0]["iconPath"]
 
     bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
 
@@ -191,7 +189,7 @@ def get_account_data_embeds_lookup(new_view: OwnedView, name: str, tag: int, typ
             description="Display Name: " + display_name
         )
         .set_author(name="User Lookup")
-        .set_footer(text=f"Platform: {destiny.platforms[membership_type]}", icon_url=membership_url)
+        .set_footer(text=f"Platform: {destiny.platforms[membership_type][0]}", icon_url=destiny.platforms[membership_type][1])
     )
     embeds.append(
         Embed(description="Loading characters...")
@@ -210,7 +208,7 @@ def get_account_data_embeds_lookup(new_view: OwnedView, name: str, tag: int, typ
         view.add_item(
             Button(
                 style=button_style,
-                label=destiny.platforms[item],
+                label=destiny.platforms[item][0],
                 custom_id=f"lookup%{name};{tag};{item}",
                 disabled=disabled
             )
@@ -328,7 +326,7 @@ def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, 
         user_name = user["bungieGlobalDisplayName"]
         user_tag = user["bungieGlobalDisplayNameCode"]
         #translate platforms
-        platforms = [destiny.platforms[m["membershipType"]] for m in user["destinyMemberships"]]
+        platforms = [destiny.platforms[m["membershipType"]][0] for m in user["destinyMemberships"]]
         #values reused for dropdown
         formatted_tag = str(user_tag).zfill(4)
         formatted_name = f"{user_name}#{formatted_tag}"
@@ -483,7 +481,7 @@ def get_account_data_embeds_weapons(name: str, tag: int) -> tuple[list[Embed], o
 
     #keep track of which display names and platforms account has
     display_names = [m["displayName"] for m in account_data]
-    platforms = [destiny.platforms[m["membershipType"]] for m in account_data]
+    platforms = [destiny.platforms[m["membershipType"]][0] for m in account_data]
 
     bungie_display_name = account_data[0]["bungieGlobalDisplayName"]
 
@@ -605,14 +603,13 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
     for account in accounts_data:
         membership_type = account["membershipType"]
         membership_id = account["membershipId"]
-        membership_url = destiny.IMG_ROOT + account["iconPath"]
         display_name = account["displayName"]
         response = destiny.get_characters_data(membership_type, membership_id)
         if not response:
             continue
         character_ids = list(response)
         for character_id in character_ids:
-            character_platforms[character_id] = (membership_type, membership_url, display_name)
+            character_platforms[character_id] = (membership_type, display_name)
             activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
                                                     f"?count=1&mode=7&page=0", False) #for now only pve (mode=7)
             if not activities_data or not activities_data["activities"]:
@@ -631,9 +628,9 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
     for player in recent_activity["entries"]:
         character_id = player["characterId"]
         if character_id in character_platforms.keys():
-            platform_id, platform_url, display_name = character_platforms[character_id]
+            platform_id, display_name = character_platforms[character_id]
     embeds[0].description = "Display Name: " + display_name
-    embeds[0].set_footer(text=f"Platform: {destiny.platforms[platform_id]}", icon_url=platform_url)
+    embeds[0].set_footer(text=f"Platform: {destiny.platforms[platform_id][0]}", icon_url=destiny.platforms[platform_id][1])
 
     #get activity data
     activity_time = datetime.fromisoformat(recent_activity["period"].replace("Z", "+00:00"))
@@ -661,8 +658,13 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         .set_footer(text=dest_name)
     )
 
-    players = recent_activity["entries"][:8] #max 10 embeds in a message
-    players.sort(key=lambda p: p["score"]["basic"]["value"], reverse=True)
+    #sort list of players by score, or kills if no score
+    players = recent_activity["entries"]
+    if sum(p["score"]["basic"]["value"] for p in players) == 0:
+        players.sort(key=lambda p: p["values"]["kills"]["basic"]["value"], reverse=True)
+    else:
+        players.sort(key=lambda p: p["score"]["basic"]["value"], reverse=True)
+    players = players[:8] #max 10 embeds in a message
     activity_completed = 0.0 #see if any player completed activity
 
     for player in players:
@@ -679,6 +681,7 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         emblem_hash = player["player"]["emblemHash"]
         emblem_data = destiny.get_manifest_data("InventoryItem", emblem_hash)
         emblem_bg_url = destiny.IMG_ROOT + emblem_data["secondarySpecial"]
+
         #copy emblem color
         r = emblem_data["backgroundColor"]["red"]
         g = emblem_data["backgroundColor"]["green"]
@@ -704,7 +707,7 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         embed.set_author(name=f"{name}#{tag}")
         embed.set_thumbnail(url=emblem_url)
         embed.set_image(url=emblem_bg_url)
-        embed.set_footer(text=destiny.platforms[platform_type])
+        embed.set_footer(text=destiny.platforms[platform_type][0], icon_url=destiny.platforms[platform_type][1])
 
         #add stat fields
         embed.add_field(name="Kills", value=str(kills + assists))

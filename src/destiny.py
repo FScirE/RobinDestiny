@@ -34,6 +34,13 @@ VOID_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinitio
 STASIS_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_530c4c3e7981dc2aefd24fd3293482bf.png"
 STRAND_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_b2fe51a94f3533f97079dfa0d27a4096.png"
 
+XBOX_URL = IMG_ROOT + "/img/theme/bungienet/icons/xboxLiveLogo.png"
+PLAYSTATION_URL = IMG_ROOT + "/img/theme/bungienet/icons/psnLogo.png"
+STEAM_URL = IMG_ROOT + "/img/theme/bungienet/icons/steamLogo.png"
+BATTLENET_URL = IMG_ROOT + "/img/theme/bungienet/icons/battlenetLogo.png"
+STADIA_URL = IMG_ROOT + "/img/theme/destiny/icons/icon_stadia.png"
+EPIC_GAMES_URL = IMG_ROOT + "/img/theme/destiny/icons/icon_egs.png"
+
 NIGHTFALL_URL = IMG_ROOT + "/common/destiny2_content/icons/3642cf9e2acd174dcab5b5f9e3a3a45d.png"
 RAID_URL = IMG_ROOT + "/common/destiny2_content/icons/bd7a1fc995f87be96698263bc16698e7.png"
 DUNGEON_URL = IMG_ROOT + "/common/destiny2_content/icons/b5c87175a97d1333da0ff4300fb87f57.png"
@@ -47,12 +54,12 @@ elements = {
     7: ("Strand", STRAND_URL)
 }
 platforms = {
-    1: "Xbox",
-    2: "Playstation",
-    3: "Steam",
-    4: "Battle.net",
-    5: "Stadia",
-    6: "Epic Games"
+    1: ("Xbox", XBOX_URL),
+    2: ("Playstation", PLAYSTATION_URL),
+    3: ("Steam", STEAM_URL),
+    4: ("Battle.net", BATTLENET_URL),
+    5: ("Stadia", STADIA_URL),
+    6: ("Epic Games", EPIC_GAMES_URL)
 }
 component_types = {
     "Profiles": 100,
