@@ -614,7 +614,7 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         for character_id in character_ids:
             character_platforms[character_id] = (membership_type, membership_url, display_name)
             activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
-                                                    f"?count=1&mode=7&page=0") #for now only pve (mode=7)
+                                                    f"?count=1&mode=7&page=0", False) #for now only pve (mode=7)
             if not activities_data or not activities_data["activities"]:
                 continue
             reference_id = int(activities_data["activities"][0]["activityDetails"]["instanceId"])
@@ -654,8 +654,9 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
             title=activity_name,
             description=activity_description
         )
-        .add_field(name="Started From Beginning" if recent_activity["activityWasStartedFromBeginning"] else "Started From Checkpoint", value="", inline=False)
-        .add_field(name=time_since_played + " ago", value="", inline=False)
+        .add_field(name="Started from beginning " if recent_activity["activityWasStartedFromBeginning"]
+                        else "Started from checkpoint " + time_since_played + " ago",
+            value="", inline=False)
         .set_image(url=activity_image_url)
         .set_footer(text=dest_name)
     )
