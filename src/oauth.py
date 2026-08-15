@@ -1,9 +1,7 @@
 import http.server
 import webbrowser
-import ssl
 from dotenv import get_key
 from urllib.parse import urlparse, parse_qs
-from src.ssl import generate_ssl_keys
 
 auth_code = None
 
@@ -24,20 +22,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             auth_code = None
             self.send_error(400, "No OAuth authentication code was returned")
 
-# def get_oauth_code():
-#     generate_ssl_keys()
+def get_oauth_code():
+    server_address = ("127.0.0.1", 8000)
+    httpd = http.server.HTTPServer(server_address, Handler)
 
-#     server_address = ("127.0.0.1", 8000)
-#     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-#     context.load_cert_chain("ssl/cert.pem", "ssl/key.pem")
+    auth_url = get_key(".env", "AUTH_URL")
+    webbrowser.open(auth_url)
 
-#     httpd = http.server.HTTPServer(server_address, Handler)
-#     httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+    httpd.handle_request()
+    httpd.server_close()
 
-#     auth_url = get_key(".env", "AUTH_URL")
-#     webbrowser.open(auth_url)
-
-#     httpd.handle_request()
-#     httpd.server_close()
-
-#     return auth_code
+    return auth_code

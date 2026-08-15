@@ -15,7 +15,6 @@
 <b>Python 3.9></b>
 - discord
 - dotenv
-- pycryptodome
 
 ## .env file keys required
 ### API keys
@@ -32,9 +31,11 @@
 - <b>TITAN_ID</b>: Character id for a titan belonging to account
 
 ## Bungie API OAuth setup
+<b>For GitHub Pages:</b> The GitHub Pages url will be `[your username].github.io/[your repository]`
+
 - <b>OAuth client type:</b> Confidential
-- <b>Redirect URL:</b> http://127.0.0.1:8000/
-- <b>Scopes:</b> <i>`Read your Destiny 2 information (Vault, Inventory, and Vendors), as well as Destiny 1 Vault and Inventory data.`</i>
+- <b>Redirect URL:</b> <i>`Your GitHub Pages url`</i>
+- <b>Scopes:</b> `Read your Destiny 2 information (Vault, Inventory, and Vendors), as well as Destiny 1 Vault and Inventory data.`
 
 ## References:
 - Bungie.Net API documentation: https://bungie-net.github.io/multi/

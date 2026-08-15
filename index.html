@@ -23,13 +23,13 @@ body {
 async function onLoad() {
     if (code) {
         try {
-            await fetch(`http://127.0.0{code}`)
+            await fetch(`http://127.0.0.1:8000?${code}`)
             window.close()
         }
         catch {
             document.body.innerHTML = `
                 <h1>Error</h1>
-                <p>Could not forward redirect. Ensure that local python server is hosted on http://localhost:8000.</p>
+                <p>Could not forward redirect. Ensure that your local Python server is hosted on http://127.0.0.1:8000.</p>
             `
         }
     } 
