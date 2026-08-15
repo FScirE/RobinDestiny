@@ -5,35 +5,36 @@
 - Finding players by Bungie name
 - Getting specific player information about their characters and platforms
 - Getting a players most used exotic weapons
-- Gathering stats and information about a players most recent activity
-- Seeing weekly grandmaster nightfall information
-- Getting weekly adept nightfall weapon
+- Gathering stats and information about a players most recent (non-PvP, non-patrol) activity
+- Seeing weekly grandmaster alert information
+- Getting weekly grandmaster alert weapon
 - Seeing the weekly pinnacle raids and dungeons
 - Browsing all weekly bright dust items from Eververse
-- Getting the most recent patch notes
+
+## Python packages required (Pip)
+<b>Python 3.9></b>
+- discord
+- dotenv
+- pycryptodome
 
 ## .env file keys required
 ### API keys
-- DESTINY_API_KEY
-    - <b>Bungie application API key</b>
-- DISCORD_API_KEY
-    - <b>Discord application API key</b>
+- <b>DESTINY_API_KEY</b>: Bungie application API key
+- <b>DISCORD_API_KEY</b>: Discord application API key
 ### OAuth
-- CLIENT_ID
-    - <b>Bungie application OAuth client_id</b>
-- CLIENT_SECRET
-    - <b>Bungie application OAuth client_secret</b>
+- <b>CLIENT_ID</b>: Bungie application OAuth client_id
+- <b>CLIENT_SECRET</b> :Bungie application OAuth client_secret
 ### Destiny account
-- MEMBERSHIP_TYPE
-    - <b>Destiny account's membership type ([reference](https://bungie-net.github.io/multi/schema_BungieMembershipType.html#schema_BungieMembershipType))</b>
-- MEMBERSHIP_ID
-    - <b>Destiny account's membership id</b>
-- HUNTER_ID
-    - <b>Character id for a hunter</b>
-- WARLOCK_ID
-    - <b>Character id for a warlock</b>
-- TITAN_ID
-    - <b>Character id for a titan</b>
+- <b>MEMBERSHIP_TYPE</b>: Destiny account's membership type ([reference](https://bungie-net.github.io/multi/schema_BungieMembershipType.html#schema_BungieMembershipType))
+- <b>MEMBERSHIP_ID</b>: Destiny account's membership id
+- <b>HUNTER_ID</b>: Character id for a hunter belonging to account
+- <b>WARLOCK_ID</b>: Character id for a warlock belonging to account
+- <b>TITAN_ID</b>: Character id for a titan belonging to account
+
+## Bungie API OAuth setup
+- <b>OAuth client type:</b> Confidential
+- <b>Redirect URL:</b> http://127.0.0.1:8000/
+- <b>Scopes:</b> <i>`Read your Destiny 2 information (Vault, Inventory, and Vendors), as well as Destiny 1 Vault and Inventory data.`</i>
 
 ## References:
 - Bungie.Net API documentation: https://bungie-net.github.io/multi/

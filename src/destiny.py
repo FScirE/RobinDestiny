@@ -1,9 +1,7 @@
-import requests
 import json
 import os
 import base64
 import shutil
-from PIL import Image
 from datetime import datetime, timezone, timedelta
 from dotenv import get_key
 from src.netreq import do_retry_request

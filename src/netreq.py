@@ -1,12 +1,12 @@
 import time
 import requests
 from requests import Response
-from datetime import datetime, timedelta
+from datetime import datetime
 
 MAX_SIZE = 200
 AMT_RETRIES = 10
 RETRY_TIMER_MULT = 1.0 #amount of time increase per retry
-CACHE_TIMEOUT = 300 #in seconds
+CACHE_TIMEOUT = 240 #in seconds
 
 key_order = []
 key_times = {}

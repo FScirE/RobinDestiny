@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+body {
+    font-family: sans-serif; 
+    text-align: center; 
+    padding-top: 50px; 
+    background: #23272A; 
+    color: white;
+}
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>OAuth Redirect</title>
+</head>
+<body>
+    <h1>Connecting to Robin D. Estiny</h1>
+    <p>Forwarding redirect to localhost...</p>
+</body>
+</html>
+
+<script>
+async function onLoad() {
+    if (code) {
+        try {
+            await fetch(`http://127.0.0{code}`)
+            window.close()
+        }
+        catch {
+            document.body.innerHTML = `
+                <h1>Error</h1>
+                <p>Could not forward redirect. Ensure that local python server is hosted on http://localhost:8000.</p>
+            `
+        }
+    } 
+    else {
+        document.body.innerHTML = `
+            <h1>Error</h1>
+            <p>No OAuth code was found.</p>
+        `
+    }
+}
+
+const urlParams = new URLSearchParams(window.location.search)
+const code = urlParams.get('code')
+onLoad()
+</script>

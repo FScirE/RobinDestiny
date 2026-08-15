@@ -12,7 +12,6 @@ from src.embeds import (
     get_gm_data_embeds,
     get_eververse_data_embeds,
     get_pinnacle_data_embeds,
-    get_patches_data_embed,
     get_account_data_embeds_weapons,
     get_top_weapons_embeds,
     get_account_data_embeds_activity,
@@ -219,15 +218,6 @@ async def lastactivity(context: discord.Interaction, name: str, tag: int):
 
 #--------------------------------------------------------------------------
 @tree.command(
-    name="patches",
-    description="See the past few Destiny 2 patch notes"
-)
-async def patches(context: discord.Interaction):
-    embed = await asyncio.to_thread(get_patches_data_embed)
-    await context.response.send_message(embed=embed)
-
-#--------------------------------------------------------------------------
-@tree.command(
     name="robin",
     description=f"See all the things you can do with Robin D. Estiny"
 )
@@ -242,7 +232,6 @@ async def robin(context: discord.Interaction):
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)
         .add_field(name="/lastactivity", value="See stats and information about the last activity played by an account")
-        .add_field(name="/patches", value="Get the most recent Destiny 2 patch notes", inline=False)
     )
 
 if __name__ == "__main__":
