@@ -2,9 +2,13 @@ import json
 import os
 import base64
 import shutil
+import requests
+import io
 from datetime import datetime, timezone, timedelta
 from dotenv import get_key
 from src.netreq import do_retry_request
+from src.oauth import get_oauth_code
+from PIL import Image
 
 DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
 ROOT = "https://www.bungie.net/Platform"
@@ -199,7 +203,7 @@ def setup_destiny_data() -> bool:
 
     #check valid refresh key exist else create new one to get access key
     if not check_refresh_token():
-        auth_key = input("  Input authorization key: ")
+        auth_key = get_oauth_code()
         access_token = get_set_oauth(auth_key)
     else:
         access_token = get_set_oauth()
@@ -262,14 +266,19 @@ def setup_destiny_data() -> bool:
             ]
             if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
                 #make sure icon url is the larger icon
-                # width = 0
-                # for item in modifier_data["displayProperties"]["iconSequences"]:
-                #     for url in item["frames"]:
-                #         image_data = requests.get(IMG_ROOT + url).content
-                #         image = Image.open(io.BytesIO(image_data))
-                #         if image.width > width:
-                #             width = image.width
-                #             modifier_data["displayProperties"]["icon"] = url
+                width = 0
+                remember_icon = modifier_data["displayProperties"]["icon"]
+                try:
+                    for item in modifier_data["displayProperties"]["iconSequences"]:
+                        for url in item["frames"]:
+                            image_data = requests.get(IMG_ROOT + url).content
+                            image = Image.open(io.BytesIO(image_data))
+                            if image.width > width:
+                                width = image.width
+                                modifier_data["displayProperties"]["icon"] = url
+                except:
+                    modifier_data["displayProperties"]["icon"] = remember_icon
+                
                 write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
 
     #raids and dungeons

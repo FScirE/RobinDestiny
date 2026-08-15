@@ -18,7 +18,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/plain")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            self.wfile.write(b"<script>window.close();</script>")
         else:
             auth_code = None
             self.send_error(400, "No OAuth authentication code was returned")
@@ -26,8 +25,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
 def get_oauth_code():
+    global auth_code
+    auth_code = None
+
     server_address = ("127.0.0.1", 8000)
     httpd = http.server.HTTPServer(server_address, Handler)
+    httpd.timeout = 60 # one minute timeout
 
     auth_url = get_key(".env", "AUTH_URL")
     webbrowser.open(auth_url)

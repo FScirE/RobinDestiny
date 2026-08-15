@@ -24,7 +24,10 @@ async function onLoad() {
     if (code) {
         try {
             await fetch(`http://127.0.0.1:8000?code=${code}`)
-            window.close()
+            document.body.innerHTML = `
+                <h1>Redirect successful</h1>
+                <p>The OAuth code was forwarded to the local Python server successfully, you may close this tab now.</p>
+            `
         }
         catch {
             document.body.innerHTML = `
