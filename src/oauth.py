@@ -15,12 +15,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if "code" in params:
             auth_code = params["code"][0]
             self.send_response(200, "OAuth authentication successful")
-            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.send_header("Content-type", "text/plain")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(b"<script>window.close();</script>")
         else:
             auth_code = None
             self.send_error(400, "No OAuth authentication code was returned")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
 
 def get_oauth_code():
     server_address = ("127.0.0.1", 8000)
