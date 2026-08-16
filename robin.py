@@ -1,5 +1,8 @@
 from dotenv import get_key
 import asyncio
+import threading
+import schedule
+import time
 from src.destiny import (
     setup_destiny_data,
 )
@@ -19,11 +22,12 @@ from src.embeds import (
 )
 import discord
 
-API_KEY = get_key(".env", "DISCORD_API_KEY")
+def run_scheduler():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
-#setup destiny data
-if not setup_destiny_data():
-    exit(-1)
+API_KEY = get_key(".env", "DISCORD_API_KEY")
 
 #start discord bot
 intents = discord.Intents.default()
@@ -236,5 +240,16 @@ async def robin(context: discord.Interaction):
     )
 
 if __name__ == "__main__":
+    #setup destiny data
+    if not setup_destiny_data():
+        exit(-1)
+
+    #run setup every 30 mins to check for daily/weekly resets
+    schedule.every().hour.at(":00").do(setup_destiny_data)
+    schedule.every().hour.at(":30").do(setup_destiny_data)
+    thread = threading.Thread(target=run_scheduler, daemon=True)
+    thread.start()
+
+    #start bot
     print("Starting...")
     client.run(API_KEY)
