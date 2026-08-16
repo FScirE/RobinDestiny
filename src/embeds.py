@@ -101,6 +101,14 @@ def get_featured_data_embeds() -> list[Embed]:
         name = activity["originalDisplayProperties"]["name"]
         description = activity["originalDisplayProperties"]["description"]
         destination = activity["destinationName"]
+
+        if len(destination) < 1:
+            #backup names
+            if "Equilibrium" in name:
+                destination = "Venus"
+            elif "Avarice" in name:
+                destination = "Cosmodrome, Earth"
+
         bg_url = destiny.IMG_ROOT + activity["pgcrImage"]
         #raid or dungeon
         activity_type = "Raid" if str(activity["activityTypeHash"]) == destiny.hashes["Raid"] else "Dungeon"
