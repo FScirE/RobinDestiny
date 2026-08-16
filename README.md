@@ -8,7 +8,7 @@
 - Gathering stats and information about a players most recent (non-PvP, non-patrol) activity
 - Seeing weekly grandmaster alert information
 - Getting weekly grandmaster alert weapon
-- Seeing the weekly pinnacle raids and dungeons
+- Seeing the weekly featured raids and dungeons
 - Browsing all weekly bright dust items from Eververse
 
 ## Python packages required (Pip)

@@ -11,7 +11,7 @@ from src.embeds import (
     get_loading_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
-    get_pinnacle_data_embeds,
+    get_featured_data_embeds,
     get_account_data_embeds_weapons,
     get_top_weapons_embeds,
     get_account_data_embeds_activity,
@@ -144,7 +144,7 @@ async def eververse(context: discord.Interaction):
 #--------------------------------------------------------------------------
 @tree.command(
     name="gm",
-    description="Get information about the current active grandmaster nightfall"
+    description="Get information about the current active grandmaster vanguard alert"
 )
 async def gm(context: discord.Interaction):
     embeds = await asyncio.to_thread(get_gm_data_embeds)
@@ -152,11 +152,11 @@ async def gm(context: discord.Interaction):
 
 #--------------------------------------------------------------------------
 @tree.command(
-    name="pinnacle",
-    description="Get all weekly pinnacle raids and dungeons"
+    name="featured",
+    description="Get all weekly featured raids and dungeons"
 )
-async def pinnacle(context: discord.Interaction):
-    embeds = await asyncio.to_thread(get_pinnacle_data_embeds)
+async def featured(context: discord.Interaction):
+    embeds = await asyncio.to_thread(get_featured_data_embeds)
     await context.response.send_message(embeds=embeds)
 
 #--------------------------------------------------------------------------
@@ -226,8 +226,8 @@ async def robin(context: discord.Interaction):
             title="Commands",
         )
         .set_thumbnail(url=client.user.avatar.url)
-        .add_field(name="/gm", value="Get information about the current active grandmaster nightfall", inline=False)
-        .add_field(name="/pinnacle", value="See the weekly pinnacle raids and dungeons", inline=False)
+        .add_field(name="/gm", value="Get information about the current active grandmaster vanguard alert", inline=False)
+        .add_field(name="/featured", value="See the weekly featured raids and dungeons", inline=False)
         .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)

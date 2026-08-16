@@ -1,14 +1,10 @@
-import json
 import os
-import base64
 import shutil
-import requests
-import io
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from dotenv import get_key
 from src.netreq import do_retry_request
-from src.oauth import get_oauth_code
-from PIL import Image
+from src.oauth import get_oauth_code, get_set_oauth, check_refresh_token
+from src.file import write_data_file, read_data_file
 
 DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
 ROOT = "https://www.bungie.net/Platform"
@@ -21,10 +17,8 @@ HEADER = {
 DATA_FOLDER = "data"
 MILESTONES_FILE = os.path.join(DATA_FOLDER, "milestones.json")
 GM_FILE = os.path.join(DATA_FOLDER, "grandmaster.json")
-DESTINATION_FILE = os.path.join(DATA_FOLDER, "gm_destination.json")
-MODIFIERS_FOLDER = os.path.join(DATA_FOLDER, "gm_modifiers")
-GM_WEAPONS_FOLDER = os.path.join(DATA_FOLDER, "gm_weapons")
-OAUTH_FILE = "./oauth.json"
+GM_DESTINATION_FILE = os.path.join(DATA_FOLDER, "gm_destination.json")
+GM_WEAPON_FILE = os.path.join(DATA_FOLDER, "gm_weapon.json")
 EVERVERSE_FOLDER = os.path.join(DATA_FOLDER, "eververse")
 RAID_DUNGEON_FOLDER = os.path.join(DATA_FOLDER, "raid_dungeon")
 
@@ -44,6 +38,7 @@ STADIA_URL = IMG_ROOT + "/img/theme/destiny/icons/icon_stadia.png"
 EPIC_GAMES_URL = IMG_ROOT + "/img/theme/destiny/icons/icon_egs.png"
 
 NIGHTFALL_URL = IMG_ROOT + "/common/destiny2_content/icons/3642cf9e2acd174dcab5b5f9e3a3a45d.png"
+VANGUARD_ALERT_URL = IMG_ROOT + "/common/destiny2_content/icons/ba5400e0bef9781f2b2c0fd805345e15.png"
 RAID_URL = IMG_ROOT + "/common/destiny2_content/icons/bd7a1fc995f87be96698263bc16698e7.png"
 DUNGEON_URL = IMG_ROOT + "/common/destiny2_content/icons/b5c87175a97d1333da0ff4300fb87f57.png"
 
@@ -76,8 +71,8 @@ component_types = {
     "VendorSales": 402
 }
 hashes = {
-    #"Nightfall": "2029743966",
-    "FocusedDecoding": "2232145065",
+    "GMAlert": "3511848321",
+    "VanguardArms": "153857624",
     "Eververse": "3361454721",
     "Xur": "2190858386",
     "Dungeon": "608898761",
@@ -107,26 +102,6 @@ def post_request_response(path: str, payload: object, cache: bool = True) -> obj
         return None
     return data.json()["Response"]
 
-def write_data_file(data: object, filepath: str) -> None:
-    """
-    Write json data to file
-    """
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, "w") as file:
-        json.dump(data, file, indent=4)
-
-def read_data_file(filepath: str) -> object:
-    """
-    Read data from json file
-    """
-    try:
-        with open(filepath, "r") as file:
-            data = json.load(file)
-    except FileNotFoundError as e:
-        return None
-    else:
-        return data
-
 def get_manifest_data(entry: str, hash: int) -> object:
     """
     Gets data from manifest
@@ -144,31 +119,16 @@ def get_request_response_oauth(path: str, access_token: str, cache: bool = True)
         return None
     return data.json()["Response"]
 
-
-def check_refresh_token() -> bool:
-    """
-    Checks if refresh token exists or if outdated
-    """
-    if not os.path.isfile(OAUTH_FILE):
-        return False
-    data = read_data_file(OAUTH_FILE)
-    expiry_date = datetime.fromisoformat(data["expiryDate"])
-    if datetime.now(timezone.utc) > expiry_date:
-        return False
-    get_set_oauth() #valid refresh token can still fail on first attempt, this gets a new refresh token
-    return True
-
 def data_outdated_incomplete() -> bool:
     """
     Checks if all data exists and reads end date of first
     entry in milestones to see if data needs updating
     """
     if (not os.path.isdir(DATA_FOLDER) or
-        not os.path.isdir(MODIFIERS_FOLDER) or
         not os.path.isfile(MILESTONES_FILE) or
         not os.path.isfile(GM_FILE) or
-        not os.path.isfile(DESTINATION_FILE) or
-        not os.path.isdir(GM_WEAPONS_FOLDER) or
+        not os.path.isfile(GM_DESTINATION_FILE) or
+        not os.path.isdir(GM_WEAPON_FILE) or
         not os.path.isdir(EVERVERSE_FOLDER) or
         not os.path.isdir(RAID_DUNGEON_FOLDER)):
         print("Data is incomplete")
@@ -229,62 +189,51 @@ def setup_destiny_data() -> bool:
     #grandmaster.json
     print("  Getting grandmaster...")
     character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
-                                f"?components={component_types['CharacterActivities']}", access_token, False)
+                                                f"?components={component_types['CharacterActivities']}", access_token, False)
     activities = character_data["activities"]["data"]["availableActivities"]
     found = False
     for activity in activities:
-        if "modifierHashes" not in activity or len(activity["modifierHashes"]) <= 11: #speed up search
+        if (
+            "challenges" not in activity or 
+            len(activity["challenges"]) < 1
+        ):
             continue
-        nightfall_hash = activity["activityHash"]
-        nightfall_data = get_manifest_data("Activity", nightfall_hash)
-        if nightfall_data["displayProperties"]["name"] == "Nightfall: Grandmaster":
-            found = True
-            print("    Found!")
-            write_data_file(nightfall_data, GM_FILE)
+        #activity has challenges
+        for challenge in activity["challenges"]:
+            objective_hash = challenge["objective"]["objectiveHash"]
+            if str(objective_hash) == hashes["GMAlert"]:  
+                #a listed challenge objective is GM alert
+                nightfall_hash = activity["activityHash"]
+                nightfall_data = get_manifest_data("Activity", nightfall_hash)
+                found = True
+                print("    Found!")
+                write_data_file(nightfall_data, GM_FILE)
+                break
+        if found:
             break
+
     if not found: #gm not found
         print("    Not found.")
         write_data_file({}, GM_FILE)
+        write_data_file({}, GM_DESTINATION_FILE)
+        write_data_file({}, GM_WEAPON_FILE)
         write_data_file({}, MILESTONES_FILE)
-        os.mkdir(MODIFIERS_FOLDER)
     else:
-        #gmdestination.json
+        #gm_destination.json
         print("  Getting gm destination...")
         destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
-        write_data_file(destination_data, DESTINATION_FILE)
-
-        #grandmaster modifiers
-        print("  Getting gm modifiers...")
-        for modifier_hash in activity["modifierHashes"]: #grandmaster.json has additional modifiers that arent active
-            modifier_data = get_manifest_data("ActivityModifier", modifier_hash)
-            ignored_modifiers = [ #irrelevant and/or incorrect modifiers
-                "Double Nightfall Drops",
-                "Increased Vanguard Rank",
-                "Shielded Foes",
-                "Chaff",
-                "Randomized Banes"
-            ]
-            if modifier_data["displayInNavMode"] and modifier_data["displayProperties"]["name"] not in ignored_modifiers:
-                #make sure icon url is the larger icon
-                width = 0
-                remember_icon = modifier_data["displayProperties"]["icon"]
-                try:
-                    for item in modifier_data["displayProperties"]["iconSequences"]:
-                        for url in item["frames"]:
-                            image_data = requests.get(IMG_ROOT + url).content
-                            image = Image.open(io.BytesIO(image_data))
-                            if image.width > width:
-                                width = image.width
-                                modifier_data["displayProperties"]["icon"] = url
-                except:
-                    modifier_data["displayProperties"]["icon"] = remember_icon
-                
-                write_data_file(modifier_data, os.path.join(MODIFIERS_FOLDER, str(modifier_hash) + ".json"))
+        write_data_file(destination_data, GM_DESTINATION_FILE)
+        
+        #gm_weapon.json
+        print("  Getting gm weapon...")
+        weapon_hash = activity["visibleRewards"][0]["rewardItems"][0]["itemQuantity"]["itemHash"]
+        weapon_data = get_manifest_data("InventoryItem", weapon_hash)
+        write_data_file(weapon_data, GM_WEAPON_FILE)
 
     #raids and dungeons
     print("  Getting raids and dungeons...")
     for activity in activities:
-        if "challenges" not in activity: #this fails if you have completed the pinnacle already
+        if "challenges" not in activity: #this fails if you have completed the featured already
             continue
         activity_hash = activity["activityHash"]
         activity_data = get_manifest_data("Activity", activity_hash)
@@ -297,23 +246,6 @@ def setup_destiny_data() -> bool:
                 destination_name = destination_data["displayProperties"]["name"]
                 activity_data["destinationName"] = destination_name
                 write_data_file(activity_data, os.path.join(RAID_DUNGEON_FOLDER, f"{activity_hash}.json"))
-
-    #nightfall weapon
-    print("  Getting gm weapon...")
-    focusing_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['hunter']}/Vendors/{hashes['FocusedDecoding']}/" +
-                                f"?components={component_types['VendorCategories']}," +
-                                f"{component_types['VendorSales']}", access_token, False)
-    categories = focusing_data["categories"]["data"]["categories"]
-    for category in categories:
-        #category id 2 = featured nf weapon shop
-        if category["displayCategoryIndex"] == 2:
-            for item_idx in category["itemIndexes"]:
-                item = focusing_data["sales"]["data"][str(item_idx)]
-                item_hash = item["itemHash"]
-                item_data = get_manifest_data("InventoryItem", item_hash)
-                if ("(Adept)" not in item_data["displayProperties"]["name"]):
-                    write_data_file(item_data, os.path.join(GM_WEAPONS_FOLDER, f"{item_hash}.json"))
-            break
 
     #eververse weeklies
     print("  Getting eververse:")
@@ -378,42 +310,3 @@ def get_rarity_color(item: object) -> tuple[int, int, int]:
         return 79, 54, 99
     else: #Rare
         return 86, 126, 157
-
-def get_set_oauth(code: bool = None) -> str:
-    """
-    Gets OAuth access token given an authentication code, or using refresh token,
-    and saves refresh token to file
-    (psa: authentication code is one time use)
-    """
-    url = "https://www.bungie.net/platform/app/oauth/token/"
-    id = get_key(".env", "CLIENT_ID")
-    secret = get_key(".env", "CLIENT_SECRET")
-
-    get = code is None
-
-    coded = base64.b64encode(f"{id}:{secret}".encode()).decode("ascii")
-    header = {
-        "Authorization": "Basic " + coded,
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-    if get: #if no auth code provided use refresh token
-        info = {
-            "grant_type": "refresh_token",
-            "refresh_token": read_data_file(OAUTH_FILE)["token"]
-        }
-    else:
-        info = {
-            "grant_type": "authorization_code",
-            "code": code
-        }
-    data_raw = do_retry_request(False, False, url, header, data_http=info)
-    if "error" in data_raw.json():
-        return None
-    data = data_raw.json()
-
-    refresh_data = {
-        "token": data["refresh_token"],
-        "expiryDate": (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()
-    }
-    write_data_file(refresh_data, OAUTH_FILE)
-    return data["access_token"]
