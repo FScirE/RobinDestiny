@@ -32,7 +32,7 @@ async function onLoad() {
         catch {
             document.body.innerHTML = `
                 <h1>Error</h1>
-                <p>Could not forward redirect. Ensure that your local Python server is hosted on http://127.0.0.1:8000 and that CORS is not blocking this source.</p>
+                <p>Could not forward redirect. Ensure that your local Python server is hosted on http://127.0.0.1:8000 and that the CORS policy is not blocking this source.</p>
             `
         }
     } 
