@@ -9,7 +9,7 @@
 - Seeing weekly grandmaster alert information
 - Getting weekly grandmaster alert weapon
 - Seeing the weekly featured raids and dungeons
-- Browsing all weekly bright dust items from Eververse
+- Browsing all daily bright dust items from Eververse
 
 ## Python packages required (Pip)
 <b>Python 3.9></b>

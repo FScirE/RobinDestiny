@@ -137,7 +137,7 @@ async def action_callback(context: discord.Interaction):
 #--------------------------------------------------------------------------
 @tree.command(
     name="eververse",
-    description="Get all weekly bright dust offers from eververse"
+    description="Get all daily bright dust offers from eververse"
 )
 async def eververse(context: discord.Interaction):
     await handle_eververse(True, context)
@@ -229,7 +229,7 @@ async def robin(context: discord.Interaction):
         .set_thumbnail(url=client.user.avatar.url)
         .add_field(name="/gm", value="Get information about the current active grandmaster vanguard alert", inline=False)
         .add_field(name="/featured", value="See the weekly featured raids and dungeons", inline=False)
-        .add_field(name="/eververse", value="Browse through all the weekly bright dust offerings in Eververse", inline=False)
+        .add_field(name="/eververse", value="Browse through all the daily bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)
         .add_field(name="/lastactivity", value="See stats and information about the last activity played by an account")

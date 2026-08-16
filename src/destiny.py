@@ -73,11 +73,23 @@ component_types = {
 hashes = {
     "GMAlert": "3511848321",
     "VanguardArms": "153857624",
-    "Eververse": "3361454721",
     "Xur": "2190858386",
     "Dungeon": "608898761",
     "Raid": "2043403989"
 }
+#eververse bright dust rotators
+eververse_vendors = [
+    "2168194999", #exotic weapon ornaments
+    "2031393824", #exotic and legendary armor ornaments
+    "3118972542", #exotic emotes
+    "3702989297", #exotic ghost shells
+    "4020265966", #exotic ships
+    "1105106638", #exotic sparrows/skimmers
+    "2184482416", #legendary and rare emotes
+    "1446296883", #ghost projections
+    "2041776156", #shaders
+    "213864513", #transmat effects
+]
 classes = {
     671679327 : "Hunter",
     2271682572 : "Warlock",
@@ -142,9 +154,15 @@ def data_outdated_incomplete() -> bool:
         return True
     return False
 
+def needs_weekly_reset() -> bool:
+    pass
+
+def needs_daily_reset() -> bool:
+    pass
+
 def setup_destiny_data() -> bool:
     """
-    Setup weekly Destiny json data
+    Setup weekly Destiny json data (daily in the case of eververse)
     """
     print("Setting up destiny data...")
 
@@ -252,15 +270,15 @@ def setup_destiny_data() -> bool:
     gathered = [] #keep track of item hashes to ignore shared items
     for key, ch_id in ch_ids.items():
         print(f"    {key.title()}...")
-        eververse_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{hashes['Eververse']}/" +
-                            f"?components={component_types['VendorCategories']}," +
-                            f"{component_types['VendorSales']}", access_token, False)
-        #category id 2 = featured bright dust
-        #category id 9 = bright dust items
-        #category id 10 = bright dust flair
-        categories = eververse_data["categories"]["data"]["categories"]
-        for category in categories:
-            if category["displayCategoryIndex"] in [2, 9, 10]: #add items from the 3 eververse bright dust weekly shops
+
+        for vendor_hash in eververse_vendors:
+            #get vendor data
+            eververse_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{vendor_hash}/" +
+                                f"?components={component_types['VendorCategories']}," +
+                                f"{component_types['VendorSales']}", access_token, False)
+            #write each item's data to a file
+            categories = eververse_data["categories"]["data"]["categories"]
+            for category in categories:
                 for item_idx in category["itemIndexes"]:
                     item = eververse_data["sales"]["data"][str(item_idx)]
                     item_hash = item["itemHash"]
