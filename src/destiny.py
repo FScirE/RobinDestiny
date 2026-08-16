@@ -195,7 +195,7 @@ def setup_destiny_data() -> bool:
     for activity in activities:
         if (
             "challenges" not in activity or 
-            len(activity["challenges"]) < 1
+            not activity["challenges"]
         ):
             continue
         #activity has challenges
@@ -223,7 +223,7 @@ def setup_destiny_data() -> bool:
         print("  Getting gm destination...")
         destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
         write_data_file(destination_data, GM_DESTINATION_FILE)
-        
+
         #gm_weapon.json
         print("  Getting gm weapon...")
         weapon_hash = activity["visibleRewards"][0]["rewardItems"][0]["itemQuantity"]["itemHash"]

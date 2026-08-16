@@ -576,12 +576,18 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         character_ids = list(response)
         for character_id in character_ids:
             activities_data = destiny.get_request_response(f"/Destiny2/{membership_type}/Account/{membership_id}/Character/{character_id}/Stats/Activities/" +
-                                                    f"?count=1&mode=7&page=0", False) #for now only pve (mode=7)
+                                                           f"?count=11&mode=7&page=0", False) #for now only pve (mode=7)
             if not activities_data or not activities_data["activities"]:
                 continue
-            reference_id = int(activities_data["activities"][0]["activityDetails"]["instanceId"])
-            activity_report = destiny.get_request_response(f"/Destiny2/Stats/PostGameCarnageReport/{reference_id}/")
-            activities.append(activity_report)
+
+            activities_list = activities_data["activities"]
+            for idx, activity in enumerate(activities_list):
+                if idx < len(activities_list) - 1 and activity["activityDetails"]["mode"] == 6: #skip patrols (mode=6), until last in list of activities
+                    continue
+                reference_id = int(activity["activityDetails"]["instanceId"])
+                activity_report = destiny.get_request_response(f"/Destiny2/Stats/PostGameCarnageReport/{reference_id}/")
+                activities.append(activity_report)
+                break
 
     #get last activity
     activities.sort(key=lambda a: datetime.fromisoformat(a["period"].replace("Z", "+00:00")), reverse=True)
@@ -621,10 +627,11 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         players.sort(key=lambda p: p["values"]["kills"]["basic"]["value"], reverse=True)
     else:
         players.sort(key=lambda p: p["score"]["basic"]["value"], reverse=True)
+    players_hidden = len(players) > 8
     players = players[:8] #max 10 embeds in a message
     activity_completed = 0.0 #see if any player completed activity
 
-    for player in players:
+    for idx, player in enumerate(players):
         #player info
         guardian_class = player["player"]["characterClass"]
         power = player["player"]["lightLevel"]
@@ -664,7 +671,10 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         embed.set_author(name=f"{name}#{tag}")
         embed.set_thumbnail(url=emblem_url)
         embed.set_image(url=emblem_bg_url)
-        embed.set_footer(text=destiny.platforms[platform_type][0], icon_url=destiny.platforms[platform_type][1])
+        embed.set_footer(
+            text=destiny.platforms[platform_type][0] + (" ...Additional players hidden below" if players_hidden and idx == len(players) - 1 else ""), 
+            icon_url=destiny.platforms[platform_type][1]
+        )
 
         #add stat fields
         embed.add_field(name="Kills", value=str(kills + assists))
