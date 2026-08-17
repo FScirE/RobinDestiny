@@ -15,6 +15,7 @@
 <b>Python 3.9></b>
 - discord
 - dotenv
+- schedule
 
 ## .env file keys required
 ### API keys
