@@ -245,8 +245,8 @@ if __name__ == "__main__":
         exit(-1)
 
     #run setup every 30 mins to check for daily/weekly resets
-    schedule.every().hour.at(":00").do(setup_destiny_data)
-    schedule.every().hour.at(":30").do(setup_destiny_data)
+    schedule.every().hour.at(":05").do(setup_destiny_data)
+    schedule.every().hour.at(":35").do(setup_destiny_data)
     thread = threading.Thread(target=run_scheduler, daemon=True)
     thread.start()
 
