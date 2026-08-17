@@ -42,6 +42,7 @@ VANGUARD_ALERT_URL = IMG_ROOT + "/common/destiny2_content/icons/ba5400e0bef9781f
 RAID_URL = IMG_ROOT + "/common/destiny2_content/icons/bd7a1fc995f87be96698263bc16698e7.png"
 DUNGEON_URL = IMG_ROOT + "/common/destiny2_content/icons/b5c87175a97d1333da0ff4300fb87f57.png"
 EVERVERSE_URL = IMG_ROOT + "/common/destiny2_content/icons/23163a74361c916f4446518aa53fd014.png"
+LZ_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyActivityModeDefinition_0aa1d7b0e0ac2c6820036b6b3dde3e5b.png"
 
 elements = {
     1: ("Kinetic", KINETIC_URL),
@@ -283,8 +284,9 @@ def setup_destiny_data() -> bool:
                 activity_data = get_manifest_data("Activity", activity_hash)
                 activity_type_hash = activity_data["activityTypeHash"]
                 if str(activity_type_hash) in [hashes["Raid"], hashes["Dungeon"]]:
-                    if (("selectionScreenDisplayProperties" in activity_data and activity_data["selectionScreenDisplayProperties"]["name"] != "Master") or
-                        "selectionScreenDisplayProperties" not in activity_data):
+                    if ((("selectionScreenDisplayProperties" in activity_data and activity_data["selectionScreenDisplayProperties"]["name"] != "Master") or
+                        "selectionScreenDisplayProperties" not in activity_data) and
+                        "(Epic)" not in activity_data["displayProperties"]["name"]): #filter out master and epic versions of raids+dungeons
                         #get destination info and add into activity data
                         destination_data = get_manifest_data("Destination", activity_data["destinationHash"])
                         destination_name = destination_data["displayProperties"]["name"]

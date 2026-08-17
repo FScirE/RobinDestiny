@@ -120,7 +120,7 @@ def get_featured_data_embeds() -> list[Embed]:
             )
             .set_author(name=activity_type, icon_url=activity_url)
             .set_image(url=bg_url)
-            .set_footer(text=destination)
+            .set_footer(text=destination, icon_url=destiny.LZ_URL)
         )
     return embeds
 
