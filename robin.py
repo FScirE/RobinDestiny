@@ -20,6 +20,7 @@ from src.embeds import (
     get_account_data_embeds_activity,
     get_last_activity_embeds
 )
+from src.io import timestamp_print
 import discord
 
 def run_scheduler():
@@ -37,7 +38,7 @@ tree = discord.app_commands.CommandTree(client)
 @client.event
 async def on_ready():
     await tree.sync()
-    print("Robin D. Estiny: Running!")
+    timestamp_print("Robin D. Estiny: Running!")
 
 #helper functions ---------------------------------------------------------
 async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
@@ -251,5 +252,5 @@ if __name__ == "__main__":
     thread.start()
 
     #start bot
-    print("Starting...")
+    timestamp_print("Starting...")
     client.run(API_KEY)

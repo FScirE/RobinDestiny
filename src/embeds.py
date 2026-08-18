@@ -1,5 +1,4 @@
 import os
-import re
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
 from discord import Embed, Colour, ButtonStyle, Interaction
@@ -651,7 +650,7 @@ def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> lis
         embed.set_thumbnail(url=emblem_url)
         embed.set_image(url=emblem_bg_url)
         embed.set_footer(
-            text=destiny.platforms[platform_type][0] + (" ...Additional players hidden below" if players_hidden and idx == len(players) - 1 else ""), 
+            text=destiny.platforms[platform_type][0] + (" ...Additional players hidden below" if players_hidden and idx == len(players) - 1 else ""),
             icon_url=destiny.platforms[platform_type][1]
         )
 

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from dotenv import get_key
 from src.netreq import do_retry_request
 from src.oauth import get_oauth_code, get_set_oauth, check_refresh_token
-from src.file import write_data_file, read_data_file
+from src.io import write_data_file, read_data_file, timestamp_print
 
 DESTINY_API_KEY = get_key(".env", "DESTINY_API_KEY")
 ROOT = "https://www.bungie.net/Platform"
@@ -149,7 +149,7 @@ def data_incomplete() -> bool:
 
 def weekly_data_outdated() -> bool:
     """
-    Checks if weekly reset has been passed, 
+    Checks if weekly reset has been passed,
     signalling that all data is outdated
     """
     resets_data = read_data_file(RESETS_FILE)
@@ -178,20 +178,20 @@ def setup_destiny_data() -> bool:
     Setup weekly Destiny json data (daily in the case of eververse).
     Returns boolean indicating if successful or not
     """
-    print("RD| Setting up destiny data...")
+    timestamp_print("Setting up destiny data...")
 
     incomplete = data_incomplete()
     weekly_reset = weekly_data_outdated()
     daily_reset = daily_data_outdated()
 
     if incomplete:
-        print("RD|   Destiny data is incomplete")
+        timestamp_print("  Destiny data is incomplete")
     elif weekly_reset:
-        print("RD|   New weekly data needs fetching")
+        timestamp_print("  New weekly data needs fetching")
     elif daily_reset:
-        print("RD|   New daily data needs fetching")
+        timestamp_print("  New daily data needs fetching")
     else:
-        print("RD|   Reusing stored data")
+        timestamp_print("  Reusing stored data")
 
     if incomplete or weekly_reset or daily_reset:
         #some data refresh needed
@@ -201,7 +201,7 @@ def setup_destiny_data() -> bool:
             "hunter": get_key(".env", "HUNTER_ID"),
             "warlock": get_key(".env", "WARLOCK_ID"),
             "titan": get_key(".env", "TITAN_ID")
-        } 
+        }
 
         reset_data = read_data_file(RESETS_FILE)
         if not reset_data:
@@ -211,18 +211,18 @@ def setup_destiny_data() -> bool:
             }
 
         #check valid refresh key exist else create new one to get access key
-        print("RD|   Acquiring access token...")
+        timestamp_print("  Acquiring access token...")
         if not check_refresh_token():
             auth_key = get_oauth_code()
             access_token = get_set_oauth(auth_key)
         else:
             access_token = get_set_oauth()
         if access_token is None:
-            print("RD|     Failed getting access token")
+            timestamp_print("    Failed getting access token")
             return False
-        print("RD|     Access token acquired")
+        timestamp_print("    Access token acquired")
 
-        print("RD| Gathering data from Bungie.Net API:")
+        timestamp_print("Gathering data from Bungie.Net API:")
 
         # WEEKLY RESET OR INCOMPLETE BELOW
 
@@ -233,50 +233,50 @@ def setup_destiny_data() -> bool:
                 os.mkdir(RAID_DUNGEON_FOLDER)
 
             #grandmaster.json
-            print("RD|   Getting grandmaster...")
+            timestamp_print("  Getting grandmaster...")
             character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
                                                         f"?components={component_types['CharacterActivities']}", access_token, False)
             activities = character_data["activities"]["data"]["availableActivities"]
             found = False
             for activity in activities:
                 if (
-                    "challenges" not in activity or 
+                    "challenges" not in activity or
                     not activity["challenges"]
                 ):
                     continue
                 #activity has challenges
                 for challenge in activity["challenges"]:
                     objective_hash = challenge["objective"]["objectiveHash"]
-                    if str(objective_hash) == hashes["GMAlert"]:  
+                    if str(objective_hash) == hashes["GMAlert"]:
                         #a listed challenge objective is GM alert
                         nightfall_hash = activity["activityHash"]
                         nightfall_data = get_manifest_data("Activity", nightfall_hash)
                         found = True
-                        print("RD|     Found!")
+                        timestamp_print("    Found!")
                         write_data_file(nightfall_data, GM_FILE)
                         break
                 if found:
                     break
 
             if not found: #gm not found
-                print("RD|     Not found")
+                timestamp_print("    Not found")
                 write_data_file({}, GM_FILE)
                 write_data_file({}, GM_DESTINATION_FILE)
                 write_data_file({}, GM_WEAPON_FILE)
             else:
                 #gm_destination.json
-                print("RD|   Getting gm destination...")
+                timestamp_print("  Getting gm destination...")
                 destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
                 write_data_file(destination_data, GM_DESTINATION_FILE)
 
                 #gm_weapon.json
-                print("RD|   Getting gm weapon...")
+                timestamp_print("  Getting gm weapon...")
                 weapon_hash = activity["visibleRewards"][0]["rewardItems"][0]["itemQuantity"]["itemHash"]
                 weapon_data = get_manifest_data("InventoryItem", weapon_hash)
                 write_data_file(weapon_data, GM_WEAPON_FILE)
 
             #raids and dungeons
-            print("RD|   Getting raids and dungeons...")
+            timestamp_print("  Getting raids and dungeons...")
             for activity in activities:
                 if "challenges" not in activity: #this fails if you have completed the featured already
                     continue
@@ -294,7 +294,7 @@ def setup_destiny_data() -> bool:
                         write_data_file(activity_data, os.path.join(RAID_DUNGEON_FOLDER, f"{activity_hash}.json"))
 
             #reset.json weekly reset, for checking if up to date in the future
-            print("RD|   Getting next weekly reset...")
+            timestamp_print("  Getting next weekly reset...")
             milestones_data = get_request_response("/Destiny2/Milestones/", False)
             first = list(milestones_data)[0]
             entry = milestones_data[first]
@@ -308,10 +308,10 @@ def setup_destiny_data() -> bool:
             os.mkdir(EVERVERSE_FOLDER)
 
         #eververse weeklies
-        print("RD|   Getting eververse:")
+        timestamp_print("  Getting eververse:")
         gathered = [] #keep track of item hashes to ignore shared items
         for key, ch_id in ch_ids.items():
-            print(f"RD|     {key.title()}...")
+            timestamp_print(f"    {key.title()}...")
 
             for vendor_hash in eververse_vendors:
                 #get vendor data
@@ -341,7 +341,7 @@ def setup_destiny_data() -> bool:
         #write next weekly and daily reset times to file
         write_data_file(reset_data, RESETS_FILE)
 
-    print("RD| Done!")
+    timestamp_print("Done!")
     return True
 
 def get_account_data(name: str, tag: int) -> object:
