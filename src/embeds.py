@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 import src.destiny as destiny
+from src.io import read_data_file
 from discord import Embed, Colour, ButtonStyle, Interaction
 from discord.ui import View, Button, Select
 
@@ -24,6 +25,35 @@ def get_gm_data_embeds() -> list[Embed]:
     Gets formatted embeds with grandmaster vanguard alert data
     """
     embeds = []
+
+    #add header with time period
+    dates_data = read_data_file(destiny.RESETS_FILE)
+    current_week_date = datetime.fromisoformat(dates_data["currentDateWeekly"]).date().strftime("%a, %d %b %Y")
+    reset_week_date = datetime.fromisoformat(dates_data["weeklyReset"]).date().strftime("%a, %d %b %Y")
+    embeds.append(
+        Embed(
+            title="Weekly Grandmaster Vanguard Alert"
+        )
+        .add_field(name="From: ", value=current_week_date, inline=True)
+        .add_field(name="Until: ", value=reset_week_date, inline=True)
+    )
+
+    #nightfall weapon embed
+    weapon_data = destiny.read_data_file(destiny.GM_WEAPON_FILE)
+    weapon_name = weapon_data["displayProperties"]["name"]
+    weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
+    weapon_description = weapon_data["flavorText"]
+    weapon_type = weapon_data["itemTypeDisplayName"]
+    weapon_element = weapon_data["defaultDamageType"]
+    embeds.append(
+        Embed(
+            title=weapon_name,
+            description=weapon_description
+        )
+        .set_author(name="Weekly Bonus Weapon")
+        .set_thumbnail(url=weapon_url)
+        .set_footer(text=f"{destiny.elements[weapon_element][0]} {weapon_type}", icon_url=destiny.elements[weapon_element][1])
+    )
 
     #data from grandmaster.json
     gm_data = destiny.read_data_file(destiny.GM_FILE)
@@ -58,22 +88,6 @@ def get_gm_data_embeds() -> list[Embed]:
             Embed(title="Grandmaster not found!")
         )
 
-    #nightfall weapon embed
-    weapon_data = destiny.read_data_file(destiny.GM_WEAPON_FILE)
-    weapon_name = weapon_data["displayProperties"]["name"]
-    weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
-    weapon_description = weapon_data["flavorText"]
-    weapon_type = weapon_data["itemTypeDisplayName"]
-    weapon_element = weapon_data["defaultDamageType"]
-    embeds.insert(0,
-        Embed(
-            title=weapon_name,
-            description=weapon_description
-        )
-        .set_author(name="Weekly Grandmaster Alert Weapon")
-        .set_thumbnail(url=weapon_url)
-        .set_footer(text=f"{destiny.elements[weapon_element][0]} {weapon_type}", icon_url=destiny.elements[weapon_element][1])
-    )
     return embeds
 
 def get_featured_data_embeds() -> list[Embed]:
@@ -90,10 +104,20 @@ def get_featured_data_embeds() -> list[Embed]:
             raids.append(file_data)
         else:
             dungeons.append(file_data)
+
+    #get the time period
+    dates_data = read_data_file(destiny.RESETS_FILE)
+    current_week_date = datetime.fromisoformat(dates_data["currentDateWeekly"]).date().strftime("%a, %d %b %Y")
+    reset_week_date = datetime.fromisoformat(dates_data["weeklyReset"]).date().strftime("%a, %d %b %Y")
+
     #add each raid and dungeon embed
     embeds = []
     embeds.append(
-        Embed().set_author(name="Weekly Featured Raids and Dungeons")
+        Embed(
+            title="Weekly Featured Raids and Dungeons"
+        )
+        .add_field(name="From: ", value=current_week_date, inline=True)
+        .add_field(name="Until: ", value=reset_week_date, inline=True)
     )
     activities = raids + dungeons
     for activity in activities:
@@ -391,9 +415,12 @@ def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[
     else:
         eververse_header = Embed(title=category + "s")
     eververse_header.set_author(name="Daily Eververse Items", icon_url=destiny.EVERVERSE_URL)
+    current_eververse_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
+    eververse_header.set_footer(text=current_eververse_day)
     embeds.insert(0, eververse_header)
 
     #create buttons to change category
+    available_categories.sort(key=(lambda c : c.split(" ")[1] if "Ornament" in c else c)) #group ornaments together
     for existing in available_categories:
         if category == existing:
             button_style = ButtonStyle.primary

@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dotenv import get_key
 from src.netreq import do_retry_request
 from src.oauth import get_oauth_code, get_set_oauth, check_refresh_token
@@ -207,7 +207,9 @@ def setup_destiny_data() -> bool:
         if not reset_data:
             reset_data = {
                 "weeklyReset": "",
-                "dailyReset": ""
+                "dailyReset": "",
+                "currentDateWeekly": "",
+                "currentDateDaily": ""
             }
 
         #check valid refresh key exist else create new one to get access key
@@ -297,8 +299,9 @@ def setup_destiny_data() -> bool:
             timestamp_print("  Getting next weekly reset...")
             milestones_data = get_request_response("/Destiny2/Milestones/", False)
             first = list(milestones_data)[0]
-            entry = milestones_data[first]
-            reset_data["weeklyReset"] = entry["endDate"]
+            weekly_end_date = milestones_data[first]["endDate"]
+            reset_data["weeklyReset"] = weekly_end_date
+            reset_data["currentDateWeekly"] = (datetime.fromisoformat(weekly_end_date) - timedelta(weeks=1)).isoformat(timespec="seconds")
 
         # DAILY RESET OR INCOMPLETE BELOW
 
@@ -336,7 +339,9 @@ def setup_destiny_data() -> bool:
                         write_data_file(item_data, os.path.join(EVERVERSE_FOLDER, str(item_hash) + ".json"))
 
         #reset.json daily reset, for checking if up to date in the future
-        reset_data["dailyReset"] = item["overrideNextRefreshDate"]
+        daily_end_date = item["overrideNextRefreshDate"]
+        reset_data["dailyReset"] = daily_end_date
+        reset_data["currentDateDaily"] = (datetime.fromisoformat(daily_end_date) - timedelta(days=1)).isoformat(timespec="seconds")
 
         #write next weekly and daily reset times to file
         write_data_file(reset_data, RESETS_FILE)
