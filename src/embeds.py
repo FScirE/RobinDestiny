@@ -420,7 +420,7 @@ def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[
     embeds.insert(0, eververse_header)
 
     #create buttons to change category
-    available_categories.sort(key=(lambda c : c.split(" ")[1] if "Ornament" in c else c)) #group ornaments together
+    available_categories.sort(key=(lambda c : " ".join(c.split(" ")[::-1]) if "Ornament" in c else c)) #group ornaments together
     for existing in available_categories:
         if category == existing:
             button_style = ButtonStyle.primary
