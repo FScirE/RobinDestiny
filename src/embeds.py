@@ -5,6 +5,13 @@ from src.io import read_data_file
 from discord import Embed, Colour, ButtonStyle, Interaction
 from discord.ui import View, Button, Select
 
+COMMAND_NAMES = {
+    "topweapons": "Top Exotic Weapons",
+    "lookup": "User lookup",
+    "search": "User lookup",
+    "lastactivity": "Last activity"
+}
+
 class OwnedView(View):
     """
     View with stored owner
@@ -279,15 +286,10 @@ def get_loading_embed(command: str, name: str, tag: int = None):
         title=title,
         description="Searching..."
     )
-    if command == "topweapons":
-        embed.set_author(name="Top Exotic Weapons")
-    elif command in ["lookup", "search"]:
-        embed.set_author(name="User lookup")
-    elif command == "lastactivity":
-        embed.set_author(name="Last activity")
+    embed.set_author(name=COMMAND_NAMES[command])
     return embed
 
-def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, OwnedView]:
+def get_search_embed(new_view: OwnedView, name: str, page: int, source: str) -> tuple[Embed, OwnedView]:
     """
     Gets embed for a page of user search results
     """
@@ -306,14 +308,14 @@ def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, 
     #for exact lookup
     dropdown = Select(
         placeholder="Exact user lookup",
-        custom_id="lookup%"
+        custom_id=f"{source}%"
     )
 
     #build embed
     embed = Embed(
         title=f"Search Results For: {name}"
     )
-    embed.set_author(name="User Lookup")
+    embed.set_author(name=COMMAND_NAMES[source])
     i = 0
     for user in results:
         user_name = user["bungieGlobalDisplayName"]
@@ -345,7 +347,7 @@ def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, 
             Button(
                 style=ButtonStyle.primary,
                 label="< Previous page",
-                custom_id=f"search%{name};{page - 1}"
+                custom_id=f"search%{name};{page - 1};{source}"
             )
         )
     if has_more:
@@ -353,7 +355,7 @@ def get_search_embed(new_view: OwnedView, name: str, page: int) -> tuple[Embed, 
             Button(
                 style=ButtonStyle.primary,
                 label="Next page >",
-                custom_id=f"search%{name};{page + 1}"
+                custom_id=f"search%{name};{page + 1};{source}"
             )
         )
     return embed, view
@@ -533,7 +535,7 @@ def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int
         pos += 1
     return embeds
 
-def get_account_data_embeds_activity(name: str, tag: int) -> tuple[list[Embed], object]:
+def get_account_data_embeds_activity(new_view: OwnedView, name: str, tag: int) -> tuple[list[Embed], OwnedView, object]:
     """
     Gets formatted embeds with account data from name and tag for last activity command
     Also returns account object
@@ -562,7 +564,19 @@ def get_account_data_embeds_activity(name: str, tag: int) -> tuple[list[Embed], 
     embeds.append(
         Embed(description="Loading last activity...")
     )
-    return embeds, account_data
+
+    #create refresh button
+    view = new_view
+    view.timeout = None
+    view.add_item(
+        Button(
+            style=ButtonStyle.primary,
+            label="Refresh",
+            custom_id=f"lastactivity%{name};{tag}",
+            disabled=False
+        )
+    )
+    return embeds, view, account_data
 
 def get_last_activity_embeds(initial: list[Embed], accounts_data: object) -> list[Embed]:
     """
