@@ -180,7 +180,8 @@ async def action_callback(context: discord.Interaction):
         splitted = contents[1].split(";")
         name = splitted[0]
         page = int(splitted[1])
-        await handle_search(False, context, name.lower(), page)
+        source = splitted[2]
+        await handle_search(False, context, name.lower(), page, source)
     elif contents[0] == "lastactivity": #last activity
         if contents[1]: #from lookup response
             splitted = contents[1].split(";")
