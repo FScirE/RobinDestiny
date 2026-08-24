@@ -6,11 +6,14 @@ from datetime import datetime
 MAX_SIZE = 200
 AMT_RETRIES = 10
 RETRY_TIMER_MULT = 1.0 #amount of time increase per retry
-CACHE_TIMEOUT = 240 #in seconds
+CACHE_TIMEOUT = 300 #in seconds
 
 key_order = []
 key_times = {}
 requests_cache = {}
+
+manifest_key_order = []
+manifest_cache = {}
 
 def create_key(url: str, header: object, json: object, data_http: object) -> str:
     """
@@ -18,13 +21,13 @@ def create_key(url: str, header: object, json: object, data_http: object) -> str
     """
     return f"{url};{str(header)};{str(json)};{str(data_http)}"
 
-def do_retry_request(use_cache: bool, is_get: bool, url: str, header: object, json: object = None, data_http: object = None) -> Response:
+def do_retry_request(use_cache: bool, is_get: bool, url: str, header: object, json: object = None, data_http: object = None, manifest: bool = False) -> Response:
     """
     Performs a HTTP request and retries some times if server error
     """
     #check in cache
     if use_cache:
-        data = cache_lookup(url, header, json, data_http)
+        data = cache_lookup(url, header, json, data_http, manifest)
         if data:
             # print("cache " + create_key(url, header, json, data_http))
             return data
@@ -48,42 +51,49 @@ def do_retry_request(use_cache: bool, is_get: bool, url: str, header: object, js
         #print(f"Attempt {atts} Code {data.status_code}")
     #add to cache
     if use_cache and data:
-        insert_cache(data, url, header, json, data_http)
+        insert_cache(data, url, header, json, data_http, manifest)
     return data
 
-def insert_cache(data: object, url: str, header: object, json: object, data_http: object) -> None:
+def insert_cache(data: object, url: str, header: object, json: object, data_http: object, manifest: bool = False) -> None:
     """
     Inserts into cache
     """
     key = create_key(url, header, json, data_http)
+    cache = manifest_cache if manifest else requests_cache
+    order = manifest_key_order if manifest else key_order
+    times = None if manifest else key_times
     #add data to cache and refresh timer
-    requests_cache[key] = data
-    key_times[key] = datetime.now()
+    cache[key] = data
+    if times is not None:
+        times[key] = datetime.now()
     #refresh LRU order and maintain cache size
-    if key not in key_order:
-        key_order.insert(0, key)
-        while len(key_order) > MAX_SIZE:
-            last_key = key_order.pop()
-            key_times.pop(last_key)
-            requests_cache.pop(last_key)
+    if key not in order:
+        order.insert(0, key)
+        while len(order) > MAX_SIZE:
+            last_key = order.pop()
+            if times is not None:
+                times.pop(last_key)
+            cache.pop(last_key)
     else:
-        key_order.remove(key)
-        key_order.insert(0, key)
+        order.remove(key)
+        order.insert(0, key)
 
-def cache_lookup(url: str, header: object, json: object, data_http: object) -> object:
+def cache_lookup(url: str, header: object, json: object, data_http: object, manifest: bool = False) -> object:
     """
     Looks if request is in cache, returns data if it is
     """
     key = create_key(url, header, json, data_http)
-    if key in requests_cache:
+    cache = manifest_cache if manifest else requests_cache
+    order = manifest_key_order if manifest else key_order
+    if key in cache:
         #check if cache is outdated
-        if (datetime.now() - key_times[key]).total_seconds() > CACHE_TIMEOUT:
-            key_order.remove(key)
+        if not manifest and (datetime.now() - key_times[key]).total_seconds() > CACHE_TIMEOUT:
+            order.remove(key)
             key_times.pop(key)
-            requests_cache.pop(key)
+            cache.pop(key)
             return None
         #refresh LRU
-        key_order.remove(key)
-        key_order.insert(0, key)
-        return requests_cache[key]
+        order.remove(key)
+        order.insert(0, key)
+        return cache[key]
     return None

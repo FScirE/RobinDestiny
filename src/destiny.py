@@ -79,6 +79,32 @@ hashes = {
     "Dungeon": "608898761",
     "Raid": "2043403989"
 }
+#activity types for daily farmable weapons/armor
+activity_types = {
+    "FireteamOps": [
+        "1996806804" #quickplay
+        "556925641" #mission
+    ],
+    "PinnacleOps": [
+        "1227821118", #exotic mission
+        "2442898492", #crawl
+        "2897687202" #onslaught
+    ],
+    "ArenaOps": [
+        "2009300208", #quickplay
+        "904017341" #seasonal arena
+    ],
+    "SoloOps": [
+        "3851289711" #solo ops (+quickplay)
+    ],
+    "Crucible": [
+        "728792238", #sparrow racing league
+        "4088006058" #crucible
+    ],
+    "Gambit": [
+        "248695599" #gambit
+    ]
+}
 #eververse bright dust rotators
 eververse_vendors = [
     "2168194999", #exotic weapon ornaments
@@ -98,11 +124,11 @@ classes = {
     3655393761 : "Titan"
 }
 
-def get_request_response(path: str, cache: bool = True) -> object:
+def get_request_response(path: str, cache: bool = True, manifest: bool = False) -> object:
     """
     Get response from GET request to bungie API
     """
-    data = do_retry_request(cache, True, ROOT + path, HEADER)
+    data = do_retry_request(cache, True, ROOT + path, HEADER, manifest=manifest)
     if "Response" not in data.json():
         return None
     return data.json()["Response"]
@@ -120,7 +146,7 @@ def get_manifest_data(entry: str, hash: int) -> object:
     """
     Gets data from manifest
     """
-    data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/")
+    data = get_request_response(f"/Destiny2/Manifest/Destiny{entry}Definition/{hash}/", manifest=True)
     return data
 
 def get_request_response_oauth(path: str, access_token: str, cache: bool = True) -> object:
