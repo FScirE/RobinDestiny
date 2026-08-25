@@ -75,6 +75,7 @@ component_types = {
 }
 hashes = {
     "GMAlert": "3511848321",
+    "GMAlertDifficulty": "1983475410", #difficultyTierCollectionHash
     "VanguardArms": "153857624",
     "Xur": "2190858386",
     "Dungeon": "608898761",
@@ -83,27 +84,27 @@ hashes = {
 #activity types for daily farmable weapons/armor
 activity_types = {
     "FireteamOps": [
-        "1996806804" #quickplay
-        "556925641" #mission
+        1996806804, #quickplay
+        556925641 #mission
     ],
     "PinnacleOps": [
-        "1227821118", #exotic mission
-        "2442898492", #crawl
-        "2897687202" #onslaught
+        1227821118, #exotic mission
+        2442898492, #crawl
+        2897687202 #onslaught
     ],
     "ArenaOps": [
-        "2009300208", #quickplay
-        "904017341" #seasonal arena
+        2009300208, #quickplay
+        904017341 #seasonal arena
     ],
     "SoloOps": [
-        "3851289711" #solo ops (+quickplay)
+        3851289711 #solo ops (+quickplay)
     ],
     "Crucible": [
-        "728792238", #sparrow racing league
-        "4088006058" #crucible
+        728792238, #sparrow racing league
+        4088006058 #crucible
     ],
     "Gambit": [
-        "248695599" #gambit
+        248695599 #gambit
     ]
 }
 #eververse bright dust rotators
@@ -254,83 +255,6 @@ def setup_destiny_data() -> bool:
 
         timestamp_print("Gathering data from Bungie.Net API:")
 
-        # WEEKLY RESET OR INCOMPLETE BELOW
-
-        if incomplete or weekly_reset:
-            #clear featured folder
-            if os.path.isdir(RAID_DUNGEON_FOLDER):
-                shutil.rmtree(RAID_DUNGEON_FOLDER)
-                os.mkdir(RAID_DUNGEON_FOLDER)
-
-            #grandmaster.json
-            timestamp_print("  Getting grandmaster...")
-            character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
-                                                        f"?components={component_types['CharacterActivities']}", access_token, False)
-            activities = character_data["activities"]["data"]["availableActivities"]
-            found = False
-            for activity in activities:
-                if (
-                    "challenges" not in activity or
-                    not activity["challenges"]
-                ):
-                    continue
-                #activity has challenges
-                for challenge in activity["challenges"]:
-                    objective_hash = challenge["objective"]["objectiveHash"]
-                    if str(objective_hash) == hashes["GMAlert"]:
-                        #a listed challenge objective is GM alert
-                        nightfall_hash = activity["activityHash"]
-                        nightfall_data = get_manifest_data("Activity", nightfall_hash)
-                        found = True
-                        timestamp_print("    Found!")
-                        write_data_file(nightfall_data, GM_FILE)
-                        break
-                if found:
-                    break
-
-            if not found: #gm not found
-                timestamp_print("    Not found")
-                write_data_file({}, GM_FILE)
-                write_data_file({}, GM_DESTINATION_FILE)
-                write_data_file({}, GM_WEAPON_FILE)
-            else:
-                #gm_destination.json
-                timestamp_print("  Getting gm destination...")
-                destination_data = get_manifest_data("Destination", nightfall_data["destinationHash"])
-                write_data_file(destination_data, GM_DESTINATION_FILE)
-
-                #gm_weapon.json
-                timestamp_print("  Getting gm weapon...")
-                weapon_hash = activity["visibleRewards"][0]["rewardItems"][0]["itemQuantity"]["itemHash"]
-                weapon_data = get_manifest_data("InventoryItem", weapon_hash)
-                write_data_file(weapon_data, GM_WEAPON_FILE)
-
-            #raids and dungeons
-            timestamp_print("  Getting raids and dungeons...")
-            for activity in activities:
-                if "challenges" not in activity: #this fails if you have completed the featured already
-                    continue
-                activity_hash = activity["activityHash"]
-                activity_data = get_manifest_data("Activity", activity_hash)
-                activity_type_hash = activity_data["activityTypeHash"]
-                if str(activity_type_hash) in [hashes["Raid"], hashes["Dungeon"]]:
-                    if ((("selectionScreenDisplayProperties" in activity_data and activity_data["selectionScreenDisplayProperties"]["name"] != "Master") or
-                        "selectionScreenDisplayProperties" not in activity_data) and
-                        "(Epic)" not in activity_data["displayProperties"]["name"]): #filter out master and epic versions of raids+dungeons
-                        #get destination info and add into activity data
-                        destination_data = get_manifest_data("Destination", activity_data["destinationHash"])
-                        destination_name = destination_data["displayProperties"]["name"]
-                        activity_data["destinationName"] = destination_name
-                        write_data_file(activity_data, os.path.join(RAID_DUNGEON_FOLDER, f"{activity_hash}.json"))
-
-            #reset.json weekly reset, for checking if up to date in the future
-            timestamp_print("  Getting next weekly reset...")
-            milestones_data = get_request_response("/Destiny2/Milestones/", False)
-            first = list(milestones_data)[0]
-            weekly_end_date = milestones_data[first]["endDate"]
-            reset_data["weeklyReset"] = weekly_end_date
-            reset_data["currentDateWeekly"] = (datetime.fromisoformat(weekly_end_date) - timedelta(weeks=1)).isoformat(timespec="seconds")
-
         # DAILY RESET OR INCOMPLETE BELOW
 
         #clear daily rewards folder
@@ -345,6 +269,7 @@ def setup_destiny_data() -> bool:
         rewarding_activities = list(filter(lambda x: len(x["visibleRewards"]) > 0, activities)) #only check activities with rewards
 
         visited_item_hashes = [] #keep track to avoid duplicates
+        daily_activity_data_list = [] #to be reused for weekly gm
         for activity in rewarding_activities:
             for reward in activity["visibleRewards"]:
                 if reward["rewardItems"][0]["uiStyle"] == "daily_grind_guaranteed":
@@ -358,6 +283,7 @@ def setup_destiny_data() -> bool:
                     activity_data = get_manifest_data("Activity", activity_hash)
                     item_data = get_manifest_data("InventoryItem", item_hash)
 
+                    daily_activity_data_list.append((activity, activity_data))
                     daily_reward_data = {
                         "item": item_data,
                         "source": activity_data
@@ -401,6 +327,71 @@ def setup_destiny_data() -> bool:
         daily_end_date = item["overrideNextRefreshDate"]
         reset_data["dailyReset"] = daily_end_date
         reset_data["currentDateDaily"] = (datetime.fromisoformat(daily_end_date) - timedelta(days=1)).isoformat(timespec="seconds")
+
+        # WEEKLY RESET OR INCOMPLETE BELOW
+
+        if incomplete or weekly_reset:
+            #weekly grandmaster vanguard alert
+            timestamp_print("  Getting grandmaster...")
+            found = False
+            for (activity, activity_data) in daily_activity_data_list: #activities with daily farmable weapon (includes gm)
+                if "difficultyTierCollectionHash" not in activity_data:
+                    continue
+                difficulty_hash = activity_data["difficultyTierCollectionHash"]
+                if str(difficulty_hash) == hashes["GMAlertDifficulty"]:
+                    gm = activity
+                    gm_data = activity_data
+                    found = True
+                    timestamp_print("    Found!")
+                    write_data_file(gm_data, GM_FILE)
+                    break
+
+            if not found: #gm not found
+                timestamp_print("    Not found")
+                write_data_file({}, GM_FILE)
+                write_data_file({}, GM_DESTINATION_FILE)
+                write_data_file({}, GM_WEAPON_FILE)
+            else:
+                #gm alert destination
+                timestamp_print("  Getting gm destination...")
+                destination_data = get_manifest_data("Destination", gm_data["destinationHash"])
+                write_data_file(destination_data, GM_DESTINATION_FILE)
+
+                #featured gm weapon
+                timestamp_print("  Getting gm weapon...")
+                weapon_hash = gm["visibleRewards"][0]["rewardItems"][0]["itemQuantity"]["itemHash"]
+                weapon_data = get_manifest_data("InventoryItem", weapon_hash)
+                write_data_file(weapon_data, GM_WEAPON_FILE)
+
+            #clear featured folder
+            if os.path.isdir(RAID_DUNGEON_FOLDER):
+                shutil.rmtree(RAID_DUNGEON_FOLDER)
+                os.mkdir(RAID_DUNGEON_FOLDER)
+            #raids and dungeons
+            timestamp_print("  Getting raids and dungeons...")
+            for activity in activities:
+                if "challenges" not in activity: #this fails if you have completed the featured already
+                    continue
+                activity_hash = activity["activityHash"]
+                activity_data = get_manifest_data("Activity", activity_hash)
+                activity_type_hash = activity_data["activityTypeHash"]
+                if str(activity_type_hash) in [hashes["Raid"], hashes["Dungeon"]]:
+                    if ((("selectionScreenDisplayProperties" in activity_data and activity_data["selectionScreenDisplayProperties"]["name"] != "Master") or
+                        "selectionScreenDisplayProperties" not in activity_data) and
+                        "(Epic)" not in activity_data["displayProperties"]["name"]): #filter out master and epic versions of raids+dungeons
+                        #get destination info and add into activity data
+                        destination_data = get_manifest_data("Destination", activity_data["destinationHash"])
+                        destination_name = destination_data["displayProperties"]["name"]
+                        activity_data["destinationName"] = destination_name
+                        write_data_file(activity_data, os.path.join(RAID_DUNGEON_FOLDER, f"{activity_hash}.json"))
+
+            #reset.json weekly reset, for checking if up to date in the future
+            timestamp_print("  Getting next weekly reset...")
+            milestones_data = get_request_response("/Destiny2/Milestones/", False)
+            first = list(milestones_data)[0]
+            weekly_end_date = milestones_data[first]["endDate"]
+            reset_data["weeklyReset"] = weekly_end_date
+            reset_data["currentDateWeekly"] = (datetime.fromisoformat(weekly_end_date) - timedelta(weeks=1)).isoformat(timespec="seconds")
 
         #write next weekly and daily reset times to file
         write_data_file(reset_data, RESETS_FILE)
