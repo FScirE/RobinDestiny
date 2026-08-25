@@ -21,6 +21,7 @@ GM_DESTINATION_FILE = os.path.join(DATA_FOLDER, "gm_destination.json")
 GM_WEAPON_FILE = os.path.join(DATA_FOLDER, "gm_weapon.json")
 EVERVERSE_FOLDER = os.path.join(DATA_FOLDER, "eververse")
 RAID_DUNGEON_FOLDER = os.path.join(DATA_FOLDER, "raid_dungeon")
+DAILY_REWARDS_FOLDER = os.path.join(DATA_FOLDER, "daily_rewards")
 
 BRIGHT_DUST_URL = IMG_ROOT + "/common/destiny2_content/icons/555d03d9dde55e4015d76a67f1c763e2.png"
 KINETIC_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyDamageTypeDefinition_3385a924fd3ccb92c343ade19f19a370.png"
@@ -169,7 +170,8 @@ def data_incomplete() -> bool:
         not os.path.isfile(GM_DESTINATION_FILE) or
         not os.path.isfile(GM_WEAPON_FILE) or
         not os.path.isdir(EVERVERSE_FOLDER) or
-        not os.path.isdir(RAID_DUNGEON_FOLDER)):
+        not os.path.isdir(RAID_DUNGEON_FOLDER) or
+        not os.path.isdir(DAILY_REWARDS_FOLDER)):
         return True
     return False
 
@@ -331,12 +333,43 @@ def setup_destiny_data() -> bool:
 
         # DAILY RESET OR INCOMPLETE BELOW
 
+        #clear daily rewards folder
+        if os.path.isdir(DAILY_REWARDS_FOLDER):
+            shutil.rmtree(DAILY_REWARDS_FOLDER)
+            os.mkdir(DAILY_REWARDS_FOLDER)
+        #daily playlist rewards
+        timestamp_print("  Getting daily rewards...")
+        character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
+                                                    f"?components={component_types['CharacterActivities']}", access_token, False)
+        activities = character_data["activities"]["data"]["availableActivities"]
+        rewarding_activities = list(filter(lambda x: len(x["visibleRewards"]) > 0, activities)) #only check activities with rewards
+
+        visited_item_hashes = [] #keep track to avoid duplicates
+        for activity in rewarding_activities:
+            for reward in activity["visibleRewards"]:
+                if reward["rewardItems"][0]["uiStyle"] == "daily_grind_guaranteed":
+                    #save daily item activity and item data
+                    activity_hash = activity["activityHash"]
+                    item_hash = reward["rewardItems"][0]["itemQuantity"]["itemHash"]
+                    if item_hash in visited_item_hashes:
+                        continue
+
+                    visited_item_hashes.append(item_hash)
+                    activity_data = get_manifest_data("Activity", activity_hash)
+                    item_data = get_manifest_data("InventoryItem", item_hash)
+
+                    daily_reward_data = {
+                        "item": item_data,
+                        "source": activity_data
+                    }
+                    write_data_file(daily_reward_data, os.path.join(DAILY_REWARDS_FOLDER, str(item_hash) + ".json"))
+                    break
+
         #clear eververse folder
         if os.path.isdir(EVERVERSE_FOLDER):
             shutil.rmtree(EVERVERSE_FOLDER)
             os.mkdir(EVERVERSE_FOLDER)
-
-        #eververse weeklies
+        #eververse dailies
         timestamp_print("  Getting eververse:")
         gathered = [] #keep track of item hashes to ignore shared items
         for key, ch_id in ch_ids.items():
