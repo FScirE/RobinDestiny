@@ -52,10 +52,16 @@ def get_gm_data_embeds() -> list[Embed]:
     weapon_description = weapon_data["flavorText"]
     weapon_type = weapon_data["itemTypeDisplayName"]
     weapon_element = weapon_data["defaultDamageType"]
+
+    #rarity color
+    r, g, b = destiny.get_rarity_color(weapon_data)
+    rarity_colour = Colour.from_rgb(r, g, b)
+
     embeds.append(
         Embed(
             title=weapon_name,
-            description=weapon_description
+            description=weapon_description,
+            color=rarity_colour
         )
         .set_author(name="Weekly Bonus Weapon")
         .set_thumbnail(url=weapon_url)
@@ -363,6 +369,7 @@ def get_search_embed(new_view: OwnedView, name: str, page: int, source: str) -> 
 def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[Embed], OwnedView]:
     """
     Gets embeds for a selected category in eververse
+    with buttons to swap between item categories
     """
     embeds = []
     view = new_view
@@ -370,6 +377,16 @@ def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[
 
     #all available types of cosmetics
     available_categories = []
+
+    #insert header
+    if category is None:
+        eververse_header = Embed(title="Select Item Category")
+    else:
+        eververse_header = Embed(title=category + "s")
+    eververse_header.set_author(name="Daily Eververse Items", icon_url=destiny.EVERVERSE_URL)
+    current_eververse_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
+    eververse_header.set_footer(text=current_eververse_day)
+    embeds.append(eververse_header)
 
     #look through all items
     folder = os.listdir(destiny.EVERVERSE_FOLDER)
@@ -411,16 +428,6 @@ def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[
             embed.set_image(url=item_image)
         embeds.append(embed)
 
-    #insert header
-    if category is None:
-        eververse_header = Embed(title="Select Item Category")
-    else:
-        eververse_header = Embed(title=category + "s")
-    eververse_header.set_author(name="Daily Eververse Items", icon_url=destiny.EVERVERSE_URL)
-    current_eververse_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
-    eververse_header.set_footer(text=current_eververse_day)
-    embeds.insert(0, eververse_header)
-
     #create buttons to change category
     available_categories.sort(key=(lambda c : " ".join(c.split(" ")[::-1]) if "Ornament" in c else c)) #group ornaments together
     for existing in available_categories:
@@ -434,6 +441,77 @@ def get_eververse_data_embeds(new_view: OwnedView, category: str) -> tuple[list[
             style=button_style,
             label=existing + "s",
             custom_id="eververse%" + existing,
+            disabled=disabled
+        ))
+    return embeds, view
+
+def get_farmable_data_embeds(new_view: OwnedView, category: str) -> tuple[list[Embed], OwnedView]:
+    """
+    Gets formatted embeds with daily farmable gear
+    with buttons to swap between activity categories
+    """
+    embeds = []
+    view = new_view
+    view.timeout = None
+
+    #insert header
+    if category is None:
+        daily_header = Embed(title="Select Playlist")
+    else:
+        daily_header = Embed(title=category)
+    daily_header.set_author(name="Daily Farmable Playlist Items", icon_url=destiny.ACTIVITY_URL)
+    current_daily_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
+    daily_header.set_footer(text=current_daily_day)
+    embeds.append(daily_header)
+
+    #look through all items
+    folder = os.listdir(destiny.DAILY_REWARDS_FOLDER)
+    for file in folder:
+        reward_data = destiny.read_data_file(os.path.join(destiny.DAILY_REWARDS_FOLDER, file))
+        item_data = reward_data["item"]
+        activity_data = reward_data["source"]
+
+        if not category or activity_data["activityTypeHash"] not in destiny.activity_types[category]:
+            continue
+
+        item_name = item_data["displayProperties"]["name"]
+        item_url = destiny.IMG_ROOT + item_data["displayProperties"]["icon"]
+        item_description = item_data["flavorText"]
+
+        item_type = item_data["itemTypeDisplayName"]
+        item_element = item_data["defaultDamageType"]
+        is_armor = item_element == 0
+
+        #rarity color
+        r, g, b = destiny.get_rarity_color(item_data)
+        rarity_colour = Colour.from_rgb(r, g, b)
+
+        embed = Embed(
+            title=item_name,
+            description=item_description,
+            color=rarity_colour
+        )
+        embed.set_thumbnail(url=item_url)
+        if is_armor:
+            embed.set_footer(text=f"{item_type}", icon_url=destiny.ARMOR_URL)
+        else:
+            embed.set_footer(text=f"{destiny.elements[item_element][0]} {item_type}", icon_url=destiny.elements[item_element][1])
+        embeds.append(embed)
+
+    #create buttons to change category
+    available_categories = list(destiny.activity_types.keys())
+    available_categories.sort()
+    for existing in available_categories:
+        if category == existing:
+            button_style = ButtonStyle.primary
+            disabled = True
+        else:
+            button_style = ButtonStyle.secondary
+            disabled = False
+        view.add_item(Button(
+            style=button_style,
+            label=existing,
+            custom_id="farmable%" + existing,
             disabled=disabled
         ))
     return embeds, view
@@ -469,9 +547,9 @@ def get_account_data_embeds_weapons(name: str, tag: int) -> tuple[list[Embed], o
     )
     return embeds, account_data
 
-def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int = 3) -> list[Embed]:
+def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int = 5) -> list[Embed]:
     """
-    Gets embed displaying the top 3 highest kill exotics for an account
+    Gets embed displaying the exotics with highest kill count for an account
     """
     embeds = [initial[0]]
     weapon_counts = {}
@@ -517,6 +595,9 @@ def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int
         weapon_name = weapon_data["displayProperties"]["name"]
         weapon_url = destiny.IMG_ROOT + weapon_data["displayProperties"]["icon"]
         weapon_flavortext = weapon_data["flavorText"]
+        weapon_type = weapon_data["itemTypeDisplayName"]
+        weapon_element = weapon_data["defaultDamageType"]
+
         #rarity color
         r, g, b = destiny.get_rarity_color(weapon_data)
         rarity_colour = Colour.from_rgb(r, g, b)
@@ -528,9 +609,9 @@ def get_top_weapons_embeds(initial: list[Embed], accounts_data: object, amt: int
                 description=weapon_flavortext,
                 color=rarity_colour
             )
-            .set_author(name=f"#{pos}")
+            .set_author(name=f"#{pos} ({weapon_kills} Kills)")
             .set_thumbnail(url=weapon_url)
-            .add_field(name="Kills", value=str(weapon_kills))
+            .set_footer(text=f"{destiny.elements[weapon_element][0]} {weapon_type}", icon_url=destiny.elements[weapon_element][1])
         )
         pos += 1
     return embeds

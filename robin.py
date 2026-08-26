@@ -3,6 +3,7 @@ import asyncio
 import threading
 import schedule
 import time
+from types import FunctionType
 from src.destiny import (
     setup_destiny_data,
 )
@@ -14,6 +15,7 @@ from src.embeds import (
     get_loading_embed,
     get_gm_data_embeds,
     get_eververse_data_embeds,
+    get_farmable_data_embeds,
     get_featured_data_embeds,
     get_account_data_embeds_weapons,
     get_top_weapons_embeds,
@@ -61,19 +63,32 @@ async def loading_search_command_wrapper(first: bool, context: discord.Interacti
         await context.response.edit_message(embed=loading_embed, view=None)
     return original_embeds, original_view
 
-#command handler functions ------------------------------------------------
-async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
+async def simple_select_command_wrapper(first: bool, context: discord.Interaction, get_embed_func: FunctionType, arg: str = None):
     """
-    Responds with embeds and view from eververse creator and sets callbacks for buttons
+    Handles responses with embed and view for commands that only one embed data function
+    and buttons to change items shown
     """
     new_view = OwnedView(context.user.id)
-    embeds, view = await asyncio.to_thread(get_eververse_data_embeds, new_view, arg)
+    embeds, view = await asyncio.to_thread(get_embed_func, new_view, arg)
     for button in view.children:
         button.callback = action_callback
     if first:
         await context.response.send_message(embeds=embeds, view=view)
     else:
         await context.response.edit_message(embeds=embeds, view=view)
+
+#command handler functions ------------------------------------------------
+async def handle_eververse(first: bool, context: discord.Interaction, arg: str = None):
+    """
+    Responds with embeds and view from eververse creator and sets callbacks for buttons
+    """
+    await simple_select_command_wrapper(first, context, get_eververse_data_embeds, arg)
+
+async def handle_farmable(first: bool, context: discord.Interaction, arg: str = None):
+    """
+    Responds with embeds and view from daily farmable creator and sets callbacks for buttons
+    """
+    await simple_select_command_wrapper(first, context, get_farmable_data_embeds, arg)
 
 async def handle_top_weapons(first: bool, context: discord.Interaction, name: str, tag: int):
     """
@@ -167,6 +182,8 @@ async def action_callback(context: discord.Interaction):
     contents = context.data["custom_id"].split("%", 1)
     if contents[0] == "eververse": #eververse
         await handle_eververse(False, context, contents[1])
+    elif contents[0] == "farmable": #daily farmable
+        await handle_farmable(False, context, contents[1])
     elif contents[0] == "lookup": #user lookup
         if contents[1]: #from lookup response
             splitted = contents[1].split(";")
@@ -205,6 +222,14 @@ async def action_callback(context: discord.Interaction):
 )
 async def eververse(context: discord.Interaction):
     await handle_eververse(True, context)
+
+#--------------------------------------------------------------------------
+@tree.command(
+    name="farmable",
+    description="Get all daily farmable items in playlists"
+)
+async def farmable(context: discord.Interaction):
+    await handle_farmable(True, context)
 
 #--------------------------------------------------------------------------
 @tree.command(
@@ -279,8 +304,9 @@ async def robin(context: discord.Interaction):
             title="Commands",
         )
         .set_thumbnail(url=client.user.avatar.url)
-        .add_field(name="/gm", value="Get information about the current active grandmaster vanguard alert", inline=False)
+        .add_field(name="/gm", value="Get information about the current active weekly grandmaster vanguard alert", inline=False)
         .add_field(name="/featured", value="See the weekly featured raids and dungeons", inline=False)
+        .add_field(name="/farmable", value="Browse all playlists to see the current daily farmable gear")
         .add_field(name="/eververse", value="Browse through all the daily bright dust offerings in Eververse", inline=False)
         .add_field(name="/lookup", value="Find a Destiny account and all of their guardians", inline=False)
         .add_field(name="/topweapons", value="Get the most used exotic weapons of a Destiny player", inline=False)

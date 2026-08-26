@@ -44,6 +44,8 @@ RAID_URL = IMG_ROOT + "/common/destiny2_content/icons/bd7a1fc995f87be96698263bc1
 DUNGEON_URL = IMG_ROOT + "/common/destiny2_content/icons/b5c87175a97d1333da0ff4300fb87f57.png"
 EVERVERSE_URL = IMG_ROOT + "/common/destiny2_content/icons/23163a74361c916f4446518aa53fd014.png"
 LZ_URL = IMG_ROOT + "/common/destiny2_content/icons/DestinyActivityModeDefinition_0aa1d7b0e0ac2c6820036b6b3dde3e5b.png"
+ACTIVITY_URL = IMG_ROOT + "/common/destiny2_content/icons/0f123e05bb76068db9ee225b63f698cf.png"
+ARMOR_URL = IMG_ROOT + "/common/destiny2_content/icons/b13b34ec9946d36c1d108183e2a0b85a.png"
 
 elements = {
     1: ("Kinetic", KINETIC_URL),
@@ -83,20 +85,20 @@ hashes = {
 }
 #activity types for daily farmable weapons/armor
 activity_types = {
-    "FireteamOps": [
+    "Fireteam Ops": [
         1996806804, #quickplay
         556925641 #mission
     ],
-    "PinnacleOps": [
+    "Pinnacle Ops": [
         1227821118, #exotic mission
         2442898492, #crawl
         2897687202 #onslaught
     ],
-    "ArenaOps": [
+    "Arena Ops": [
         2009300208, #quickplay
         904017341 #seasonal arena
     ],
-    "SoloOps": [
+    "Solo Ops": [
         3851289711 #solo ops (+quickplay)
     ],
     "Crucible": [
