@@ -178,6 +178,9 @@ async def handle_search(first: bool, context: discord.Interaction, name: str, pa
 
 #--------------------------------------------------------------------------
 async def action_callback(context: discord.Interaction):
+    """
+    Callback handler for buttons on response views
+    """
     #context formatted as [type]%[data];[data];... etc
     contents = context.data["custom_id"].split("%", 1)
     if contents[0] == "eververse": #eververse

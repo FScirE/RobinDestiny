@@ -454,16 +454,6 @@ def get_farmable_data_embeds(new_view: OwnedView, category: str) -> tuple[list[E
     view = new_view
     view.timeout = None
 
-    #insert header
-    if category is None:
-        daily_header = Embed(title="Select Playlist")
-    else:
-        daily_header = Embed(title=category)
-    daily_header.set_author(name="Daily Farmable Playlist Items", icon_url=destiny.ACTIVITY_URL)
-    current_daily_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
-    daily_header.set_footer(text=current_daily_day)
-    embeds.append(daily_header)
-
     #look through all items
     folder = os.listdir(destiny.DAILY_REWARDS_FOLDER)
     for file in folder:
@@ -473,6 +463,11 @@ def get_farmable_data_embeds(new_view: OwnedView, category: str) -> tuple[list[E
 
         if not category or activity_data["activityTypeHash"] not in destiny.activity_types[category]:
             continue
+
+        if "difficultyTierCollectionHash" in activity_data and str(activity_data["difficultyTierCollectionHash"]) == destiny.hashes["GMAlertDifficulty"]:
+            activity_name = "Grandmaster Vanguard Alert"
+        else:
+            activity_name = activity_data["originalDisplayProperties"]["name"]
 
         item_name = item_data["displayProperties"]["name"]
         item_url = destiny.IMG_ROOT + item_data["displayProperties"]["icon"]
@@ -491,16 +486,27 @@ def get_farmable_data_embeds(new_view: OwnedView, category: str) -> tuple[list[E
             description=item_description,
             color=rarity_colour
         )
+        embed.set_author(name=f"Source: {activity_name}")
         embed.set_thumbnail(url=item_url)
         if is_armor:
             embed.set_footer(text=f"{item_type}", icon_url=destiny.ARMOR_URL)
         else:
             embed.set_footer(text=f"{destiny.elements[item_element][0]} {item_type}", icon_url=destiny.elements[item_element][1])
         embeds.append(embed)
+    embeds.sort(key=(lambda e: e.author.name + e.title)) #to ensure armor is grouped
+
+    #insert header
+    if category is None:
+        daily_header = Embed(title="Select Playlist")
+    else:
+        daily_header = Embed(title=category)
+    daily_header.set_author(name="Daily Farmable Playlist Items", icon_url=destiny.ACTIVITY_URL)
+    current_daily_day = datetime.fromisoformat(read_data_file(destiny.RESETS_FILE)["currentDateDaily"]).date().strftime("%a, %d %b %Y")
+    daily_header.set_footer(text=current_daily_day)
+    embeds.insert(0, daily_header)
 
     #create buttons to change category
     available_categories = list(destiny.activity_types.keys())
-    available_categories.sort()
     for existing in available_categories:
         if category == existing:
             button_style = ButtonStyle.primary

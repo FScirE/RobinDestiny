@@ -264,34 +264,36 @@ def setup_destiny_data() -> bool:
             shutil.rmtree(DAILY_REWARDS_FOLDER)
             os.mkdir(DAILY_REWARDS_FOLDER)
         #daily playlist rewards
-        timestamp_print("  Getting daily rewards...")
-        character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" + #i dont play titan
-                                                    f"?components={component_types['CharacterActivities']}", access_token, False)
-        activities = character_data["activities"]["data"]["availableActivities"]
-        rewarding_activities = list(filter(lambda x: len(x["visibleRewards"]) > 0, activities)) #only check activities with rewards
-
+        timestamp_print("  Getting daily rewards:")
         visited_item_hashes = [] #keep track to avoid duplicates
         daily_activity_data_list = [] #to be reused for weekly gm
-        for activity in rewarding_activities:
-            for reward in activity["visibleRewards"]:
-                if reward["rewardItems"][0]["uiStyle"] == "daily_grind_guaranteed":
-                    #save daily item activity and item data
-                    activity_hash = activity["activityHash"]
-                    item_hash = reward["rewardItems"][0]["itemQuantity"]["itemHash"]
-                    if item_hash in visited_item_hashes:
-                        continue
+        for key, ch_id in ch_ids.items():
+            timestamp_print(f"    {key.title()}...")
+            character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/"
+                                                        f"?components={component_types['CharacterActivities']}", access_token, False)
+            activities = character_data["activities"]["data"]["availableActivities"]
+            rewarding_activities = list(filter(lambda x: len(x["visibleRewards"]) > 0, activities)) #only check activities with rewards
 
-                    visited_item_hashes.append(item_hash)
-                    activity_data = get_manifest_data("Activity", activity_hash)
-                    item_data = get_manifest_data("InventoryItem", item_hash)
+            for activity in rewarding_activities:
+                for reward in activity["visibleRewards"]:
+                    if reward["rewardItems"][0]["uiStyle"] == "daily_grind_guaranteed":
+                        #save daily item activity and item data
+                        activity_hash = activity["activityHash"]
+                        item_hash = reward["rewardItems"][0]["itemQuantity"]["itemHash"]
+                        if item_hash in visited_item_hashes:
+                            continue
 
-                    daily_activity_data_list.append((activity, activity_data))
-                    daily_reward_data = {
-                        "item": item_data,
-                        "source": activity_data
-                    }
-                    write_data_file(daily_reward_data, os.path.join(DAILY_REWARDS_FOLDER, str(item_hash) + ".json"))
-                    break
+                        visited_item_hashes.append(item_hash)
+                        activity_data = get_manifest_data("Activity", activity_hash)
+                        item_data = get_manifest_data("InventoryItem", item_hash)
+
+                        daily_activity_data_list.append((activity, activity_data))
+                        daily_reward_data = {
+                            "item": item_data,
+                            "source": activity_data
+                        }
+                        write_data_file(daily_reward_data, os.path.join(DAILY_REWARDS_FOLDER, str(item_hash) + ".json"))
+                        break
 
         #clear eververse folder
         if os.path.isdir(EVERVERSE_FOLDER):
@@ -302,7 +304,6 @@ def setup_destiny_data() -> bool:
         gathered = [] #keep track of item hashes to ignore shared items
         for key, ch_id in ch_ids.items():
             timestamp_print(f"    {key.title()}...")
-
             for vendor_hash in eververse_vendors:
                 #get vendor data
                 eververse_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_id}/Vendors/{vendor_hash}/" +
