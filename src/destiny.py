@@ -372,6 +372,9 @@ def setup_destiny_data() -> bool:
                 os.mkdir(RAID_DUNGEON_FOLDER)
             #raids and dungeons
             timestamp_print("  Getting raids and dungeons...")
+            character_data = get_request_response_oauth(f"/Destiny2/{m_type}/Profile/{m_id}/Character/{ch_ids['titan']}/" #i dont play titan
+                                                        f"?components={component_types['CharacterActivities']}", access_token, False)
+            activities = character_data["activities"]["data"]["availableActivities"]
             for activity in activities:
                 if "challenges" not in activity: #this fails if you have completed the featured already
                     continue
